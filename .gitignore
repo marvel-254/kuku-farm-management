@@ -1,2 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Vercel
 .vercel
-.env*
+
+# Database
+*.sqlite
+*.db
+database/*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+backups/
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+
+# Electron
+*.AppImage
+*.dmg
+*.exe
