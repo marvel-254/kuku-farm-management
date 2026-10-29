@@ -1,0 +1,153 @@
+<div class="page-navigation">
+    <a href="#" data-navigate="dashboard" class="btn btn-outline-primary">← Back to Dashboard</a>
+</div>
+
+<div class="page-header">
+    <h1>Financial Overview</h1>
+    <p>Financial summary and key metrics</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-revenue">$0.00</h3>
+            <p>Total Revenue</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-expenses">$0.00</h3>
+            <p>Total Expenses</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="net-profit">$0.00</h3>
+            <p>Net Profit</p>
+            <small>Revenue - Expenses</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="cash-flow">$0.00</h3>
+            <p>Cash Flow</p>
+            <small>Net Position</small>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h3>Receivables</h3></div>
+            <div class="card-body">
+                <div class="stat-large" id="outstanding-invoices">$0.00</div>
+                <p class="text-muted">Outstanding invoice payments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h3>Payables</h3></div>
+            <div class="card-body">
+                <div class="stat-large" id="outstanding-debts">$0.00</div>
+                <p class="text-muted">Outstanding debt payments</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h3>Invoices Summary</h3></div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-icon">I</div><div class="stat-content"><h3 id="invoice-count">0</h3><p>Total Invoices</p></div></div>
+                    <div class="stat-card"><div class="stat-icon">$</div><div class="stat-content"><h3 id="invoice-value">$0.00</h3><p>Total Value</p></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h3>Debts Summary</h3></div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-icon">D</div><div class="stat-content"><h3 id="debt-count">0</h3><p>Total Debts</p></div></div>
+                    <div class="stat-card"><div class="stat-icon">$</div><div class="stat-content"><h3 id="debt-value">$0.00</h3><p>Total Value</p></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header"><h3>Revenue Chart</h3></div>
+    <div class="card-body">
+        <canvas id="financialChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function loadFinancialData() {
+    try {
+        const [salesRes, expensesRes, invoicesRes, debtsRes] = await Promise.all([
+            fetch('/api/sales/stats').then(r => r.json()),
+            fetch('/api/expenses/stats').then(r => r.json()),
+            fetch('/api/invoices/stats').then(r => r.json()),
+            fetch('/api/debts/stats').then(r => r.json())
+        ]);
+
+        const sales = salesRes.data || {};
+        const expenses = expensesRes.data || {};
+        const invoices = invoicesRes.data || {};
+        const debts = debtsRes.data || {};
+
+        document.getElementById('total-revenue').textContent = '$' + (parseFloat(sales.total_revenue) || 0).toFixed(2);
+        document.getElementById('total-expenses').textContent = '$' + (parseFloat(expenses.total_amount) || 0).toFixed(2);
+        document.getElementById('net-profit').textContent = '$' + ((parseFloat(sales.total_revenue) || 0) - (parseFloat(expenses.total_amount) || 0)).toFixed(2);
+        document.getElementById('cash-flow').textContent = '$' + ((parseFloat(sales.total_revenue) || 0) - (parseFloat(expenses.total_amount) || 0) - (parseFloat(debts.total_outstanding) || 0) + (parseFloat(invoices.total_outstanding) || 0)).toFixed(2);
+        document.getElementById('outstanding-invoices').textContent = '$' + (parseFloat(invoices.total_outstanding) || 0).toFixed(2);
+        document.getElementById('outstanding-debts').textContent = '$' + (parseFloat(debts.total_outstanding) || 0).toFixed(2);
+        document.getElementById('invoice-count').textContent = invoices.total_invoices || 0;
+        document.getElementById('invoice-value').textContent = '$' + (parseFloat(invoices.total_amount) || 0).toFixed(2);
+        document.getElementById('debt-count').textContent = debts.total_debts || 0;
+        document.getElementById('debt-value').textContent = '$' + (parseFloat(debts.total_amount) || 0).toFixed(2);
+    } catch (err) {
+        console.error('Financial data error:', err);
+    }
+}
+
+function createFinancialChart() {
+    const ctx = document.getElementById('financialChart');
+    if (!ctx) return;
+
+    new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Revenue', 'Expenses', 'Outstanding Receivables', 'Outstanding Payables'],
+            datasets: [{
+                data: [100, 60, 30, 20],
+                backgroundColor: ['#27ae60', '#e74c3c', '#3498db', '#f39c12']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+loadFinancialData();
+createFinancialChart();
+</script>

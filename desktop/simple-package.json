@@ -1,0 +1,35 @@
+{
+  "name": "kuku-farm-manager",
+  "version": "1.0.0",
+  "description": "KUKU Farm Management System",
+  "main": "simple-main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6",
+    "bcrypt": "^5.1.1"
+  },
+  "build": {
+    "appId": "com.kuku.farmmanager",
+    "productName": "KUKU Farm Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "simple-main.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

@@ -1,0 +1,146 @@
+<div class="page-navigation">
+    <!-- Dashboard is the main page, no back button needed -->
+</div>
+
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Farm Management Control Center</p>
+</div>
+
+<!-- Quick Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">C</div>
+        <div class="stat-content">
+            <h3 id="total-chickens">0</h3>
+            <p>Total Chickens</p>
+            <small id="healthy-chickens">0 healthy</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-revenue">$0.00</h3>
+            <p>Total Revenue</p>
+            <small>This month</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">N</div>
+        <div class="stat-content">
+            <h3 id="net-position">$0.00</h3>
+            <p>Net Financial Position</p>
+            <small id="position-status">Loading...</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">F</div>
+        <div class="stat-content">
+            <h3 id="cash-flow">$0.00</h3>
+            <p>Cash Flow</p>
+            <small id="cash-flow-status">Loading...</small>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Overview -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Receivables (Money Owed to You)</h4>
+            </div>
+            <div class="card-body">
+                <div class="stat-large" id="receivables">$0.00</div>
+                <p class="text-muted">Outstanding invoice payments</p>
+                <a href="#" data-navigate="invoices" class="btn btn-sm btn-primary">View Invoices</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Payables (Money You Owe)</h4>
+            </div>
+            <div class="card-body">
+                <div class="stat-large" id="payables">$0.00</div>
+                <p class="text-muted">Outstanding debt payments</p>
+                <a href="#" data-navigate="debts" class="btn btn-sm btn-warning">View Debts</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weather Widget -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>🌤️ Local Weather</h3>
+            </div>
+            <div class="card-body">
+                <div id="weather-widget">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading weather...</span>
+                        </div>
+                        <p>Loading weather data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>📊 Quick Charts</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="quickChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Batches</h3>
+            <a href="#" data-navigate="chickens" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+            <div id="recent-batches">
+                <p class="text-muted">Loading recent batches...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Sales</h3>
+            <a href="#" data-navigate="sales" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+            <div id="recent-sales">
+                <p class="text-muted">Loading recent sales...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Expenses</h3>
+            <a href="#" data-navigate="expenses" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+            <div id="recent-expenses">
+                <p class="text-muted">Loading recent expenses...</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,314 @@
+<div class="page-navigation">
+    <a href="#" data-navigate="dashboard" class="btn btn-outline-primary">
+        ← Back to Dashboard
+    </a>
+</div>
+
+<div class="page-header">
+    <h1>Chickens</h1>
+    <p>Manage your chicken inventory and batches</p>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">C</div>
+        <div class="stat-content">
+            <h3 id="total-chickens">0</h3>
+            <p>Total Chickens</p>
+            <small id="healthy-chickens">0 healthy</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">H</div>
+        <div class="stat-content">
+            <h3 id="healthy-count">0</h3>
+            <p>Healthy Chickens</p>
+            <small id="healthy-percentage">0% of total</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">B</div>
+        <div class="stat-content">
+            <h3 id="total-batches">0</h3>
+            <p>Active Batches</p>
+            <small>Total chicken batches</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">S</div>
+        <div class="stat-content">
+            <h3 id="other-status">0</h3>
+            <p>Other Status</p>
+            <small>Sick, sold, or deceased</small>
+        </div>
+    </div>
+</div>
+
+<!-- Chicken Batches Table -->
+<div class="card">
+    <div class="card-header">
+        <h3>Chicken Batches</h3>
+        <button class="btn btn-primary" onclick="showAddBatchModal()">Add Batch</button>
+    </div>
+    <div class="card-body">
+        <div id="batches-content">
+            <div class="text-center">
+                <div class="spinner"></div>
+                <p>Loading chicken batches...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Batch Modal -->
+<div id="batch-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="modal-title">Add Chicken Batch</h4>
+            <span class="modal-close" onclick="closeBatchModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="batch-form">
+                <div class="form-group">
+                    <label>Batch Number *</label>
+                    <input type="text" id="batch_number" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Chicken Group *</label>
+                    <select id="group_id" class="form-control" required>
+                        <option value="">Select Group</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity *</label>
+                    <input type="number" id="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Purchase Date *</label>
+                    <input type="date" id="purchase_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Purchase Cost</label>
+                    <input type="number" id="purchase_cost" class="form-control" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Supplier</label>
+                    <input type="text" id="supplier" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="notes" class="form-control" rows="3"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBatchModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveBatch()">Save Batch</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-body { padding: 1.5rem; }
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.modal-close { font-size: 1.5rem; cursor: pointer; color: #6c757d; }
+.spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
+<script>
+let currentBatchId = null;
+let groups = [];
+
+async function showAddBatchModal() {
+    currentBatchId = null;
+    document.getElementById('modal-title').textContent = 'Add Chicken Batch';
+    document.getElementById('batch-form').reset();
+    document.getElementById('purchase_date').valueAsDate = new Date();
+
+    const groupSelect = document.getElementById('group_id');
+    groupSelect.innerHTML = '<option value="">Select Group</option>';
+    groups.forEach(group => {
+        groupSelect.innerHTML += `<option value="${group.id}">${group.name} (${group.breed || ''})</option>`;
+    });
+
+    document.getElementById('batch-modal').style.display = 'block';
+}
+
+function editBatch(id) {
+    currentBatchId = id;
+    fetch(`/api/chicken-batches/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success' && data.data) {
+                const batch = data.data;
+                document.getElementById('modal-title').textContent = 'Edit Chicken Batch';
+                document.getElementById('batch_number').value = batch.batch_number;
+                document.getElementById('group_id').value = batch.group_id;
+                document.getElementById('quantity').value = batch.quantity;
+                document.getElementById('purchase_date').value = batch.purchase_date;
+                document.getElementById('purchase_cost').value = batch.purchase_cost || '';
+                document.getElementById('supplier').value = batch.supplier || '';
+                document.getElementById('notes').value = batch.notes || '';
+                document.getElementById('batch-modal').style.display = 'block';
+            }
+        });
+}
+
+async function saveBatch() {
+    const formData = {
+        batch_number: document.getElementById('batch_number').value,
+        group_id: parseInt(document.getElementById('group_id').value),
+        quantity: parseInt(document.getElementById('quantity').value),
+        purchase_date: document.getElementById('purchase_date').value,
+        purchase_cost: parseFloat(document.getElementById('purchase_cost').value) || 0,
+        supplier: document.getElementById('supplier').value,
+        notes: document.getElementById('notes').value
+    };
+
+    if (!formData.batch_number || !formData.group_id || !formData.quantity) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    try {
+        const url = currentBatchId
+            ? `/api/chicken-batches/${currentBatchId}`
+            : '/api/chicken-batches';
+        const method = currentBatchId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        const result = await res.json();
+
+        if (result.status === 'success') {
+            closeBatchModal();
+            loadChickensData();
+            showNotification('Batch saved successfully!', 'success');
+        } else {
+            showNotification(result.error || 'Error saving batch', 'error');
+        }
+    } catch (error) {
+        showNotification('Error saving batch: ' + error.message, 'error');
+    }
+}
+
+function closeBatchModal() {
+    document.getElementById('batch-modal').style.display = 'none';
+    currentBatchId = null;
+}
+
+function viewBatch(id) {
+    fetch(`/api/chicken-batches/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const batch = data.batch;
+                const chickens = data.chickens || [];
+                let html = `
+                    <div class="page-navigation">
+                        <a href="#" data-navigate="chickens" class="btn btn-outline-primary">← Back to Chickens</a>
+                        <a href="#" onclick="editBatch(${id});closeBatchModal()" class="btn btn-outline-info">Edit This Batch</a>
+                    </div>
+                    <div class="page-header"><h1>Batch Details</h1><p>Batch: ${batch.batch_number}</p></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header"><h3>Batch Information</h3></div>
+                                <div class="card-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Batch Number:</dt><dd class="col-sm-8">${batch.batch_number}</dd>
+                                        <dt class="col-sm-4">Group:</dt><dd class="col-sm-8">${batch.group_name || 'N/A'}</dd>
+                                        <dt class="col-sm-4">Purchase Date:</dt><dd class="col-sm-8">${batch.purchase_date ? new Date(batch.purchase_date).toLocaleDateString() : 'N/A'}</dd>
+                                        <dt class="col-sm-4">Purchase Cost:</dt><dd class="col-sm-8">$${(parseFloat(batch.purchase_cost) || 0).toFixed(2)}</dd>
+                                        <dt class="col-sm-4">Supplier:</dt><dd class="col-sm-8">${batch.supplier || 'N/A'}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header"><h3>Batch Statistics</h3></div>
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-card"><div class="stat-icon">C</div><div class="stat-content"><h3>${chickens.length}</h3><p>Total Chickens</p></div></div>
+                                        <div class="stat-card"><div class="stat-icon">H</div><div class="stat-content"><h3>${batch.healthy_chickens || 0}</h3><p>Healthy</p></div></div>
+                                        <div class="stat-card"><div class="stat-icon">S</div><div class="stat-content"><h3>${batch.sold_chickens || 0}</h3><p>Sold</p></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-4">
+                        <div class="card-header"><h3>Chickens in This Batch</h3><a href="#" data-navigate="chickens" class="btn btn-secondary">Back</a></div>
+                        <div class="card-body">
+                            ${chickens.length === 0 ? '<p class="text-muted">No chickens in this batch.</p>' :
+                                '<div class="table-responsive"><table class="table"><thead><tr><th>Tag Number</th><th>Gender</th><th>Status</th><th>Birth Date</th><th>Weight</th><th>Location</th></tr></thead><tbody>' +
+                                chickens.map(c => `
+                                    <tr>
+                                        <td>${c.tag_number || 'N/A'}</td>
+                                        <td>${c.gender || 'N/A'}</td>
+                                        <td><span class="badge badge-${c.status === 'healthy' ? 'success' : c.status === 'sick' ? 'warning' : c.status === 'sold' ? 'info' : 'secondary'}">${c.status}</span></td>
+                                        <td>${c.birth_date ? new Date(c.birth_date).toLocaleDateString() : 'N/A'}</td>
+                                        <td>${c.weight ? c.weight + ' kg' : 'N/A'}</td>
+                                        <td>${c.location || 'N/A'}</td>
+                                    </tr>
+                                `).join('') + '</tbody></table></div>'}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('page-container').innerHTML = html;
+                setupNavigationListeners();
+            }
+        });
+}
+
+// Initialize
+loadChickensData();
+</script>

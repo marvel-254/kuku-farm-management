@@ -1,0 +1,151 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ------------------------------------------------------------------
+  # JOB 1: Code Quality & Testing
+  # Runs syntax checks, dependency install, and basic smoke tests
+  # ------------------------------------------------------------------
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check server.js syntax
+        run: node --check server.js
+
+      - name: Check migration script syntax
+        run: node --check db/migrate.js
+
+      - name: Check electron main syntax
+        run: node --check electron-main.js
+
+      - name: Check for uncommitted secrets
+        run: |
+          if grep -rE "(sk_live_|pk_live_|AKIA[0-9A-Z]{16}|postgresql://[^\s]*:[^\s]*@)" --include="*.js" --include="*.json" --include="*.md" --include="!.env" . 2>/dev/null; then
+            echo "ERROR: Potential secrets found in committed files!"
+            exit 1
+          fi
+          echo "No secrets found in repository."
+
+      - name: Check env example validity
+        run: |
+          if grep -q "CHANGE_ME" .env.example; then
+            echo "WARNING: Placeholder values found in .env.example"
+          fi
+
+  # ------------------------------------------------------------------
+  # JOB 2: Database Migration Test
+  # Runs migrations against a fresh PostgreSQL instance to validate
+  # ------------------------------------------------------------------
+  db-test:
+    name: Database Migration Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kuku
+          POSTGRES_PASSWORD: kuku_test
+          POSTGRES_DB: kuku_farm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kuku"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://kuku:kuku_test@localhost:5432/kuku_farm_test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: node db/migrate.js
+
+      - name: Verify tables were created
+        run: |
+          TABLES=$(PGPASSWORD=kuku_test psql -h localhost -U kuku -d kuku_farm_test -t -c "SELECT tablename FROM pg_tables WHERE schemaname='public'")
+          REQUIRED_TABLES="farmers users chicken_groups chicken_batches chickens health_records items inventory sales expenses earnings milk_entries audit_logs finance_logs invoices invoice_items debts debt_payments invoice_payments"
+          MISSING=0
+          for table in $REQUIRED_TABLES; do
+            if echo "$TABLES" | grep -q "$table"; then
+              echo "Table $table: OK"
+            else
+              echo "Table $table: MISSING"
+              MISSING=1
+            fi
+          done
+          if [ $MISSING -eq 1 ]; then
+            echo "ERROR: One or more required tables missing"
+            exit 1
+          fi
+          echo "All required tables created successfully."
+
+      - name: Verify seed data
+        run: |
+          PGPASSWORD=kuku_test psql -h localhost -U kuku -d kuku_farm_test -t -c "SELECT username FROM users WHERE username='admin'"
+          PGPASSWORD=kuku_test psql -h localhost -U kuku -d kuku_farm_test -t -c "SELECT COUNT(*) FROM items"
+
+  # ------------------------------------------------------------------
+  # JOB 3: Vercel Deployment (only on main push)
+  # Deploys to Production on main, Preview on develop
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: [test, db-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI globally
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel (Production)
+        run: vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --force
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

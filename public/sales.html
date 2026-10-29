@@ -1,0 +1,211 @@
+<div class="page-navigation">
+    <a href="#" data-navigate="dashboard" class="btn btn-outline-primary">← Back to Dashboard</a>
+</div>
+
+<div class="page-header">
+    <h1>Sales</h1>
+    <p>Record chicken sales and track revenue</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-revenue">$0.00</h3>
+            <p>Total Revenue</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">S</div>
+        <div class="stat-content">
+            <h3 id="total-sales">0</h3>
+            <p>Total Sales</p>
+            <small>This month</small>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h3>Sales Records</h3>
+        <button class="btn btn-primary" onclick="showAddSaleModal()">Add Sale</button>
+    </div>
+    <div class="card-body" id="sales-content">
+        <div class="text-center"><div class="spinner"></div><p>Loading...</p></div>
+    </div>
+</div>
+
+<!-- Sale Modal -->
+<div id="sale-modal" class="modal" style="display:none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="sale-modal-title">Add Sale</h4>
+            <span class="modal-close" onclick="closeSaleModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="sale-form" onsubmit="event.preventDefault();saveSale()">
+                <div class="form-group"><label>Date *</label><input type="date" id="sale_date" class="form-control" required></div>
+                <div class="form-group"><label>Customer Name *</label><input type="text" id="customer_name" class="form-control" required></div>
+                <div class="form-group"><label>Phone</label><input type="tel" id="customer_phone" class="form-control"></div>
+                <div class="form-group"><label>Quantity</label><input type="number" id="quantity" class="form-control" min="1" value="1" onchange="calcSaleTotal()"></div>
+                <div class="form-group"><label>Unit Price ($) *</label><input type="number" id="unit_price" class="form-control" step="0.01" min="0" required onchange="calcSaleTotal()"></div>
+                <div class="form-group"><label>Total ($)</label><input type="number" id="total_amount" class="form-control" step="0.01" min="0" readonly></div>
+                <div class="form-group"><label>Payment Method</label>
+                    <select id="payment_method" class="form-control">
+                        <option value="cash">Cash</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="credit">Credit</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Payment Status</label>
+                    <select id="payment_status" class="form-control">
+                        <option value="paid">Paid</option>
+                        <option value="partial">Partial</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Notes</label><textarea id="notes" class="form-control" rows="2"></textarea></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeSaleModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveSale()">Save Sale</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 5% auto; padding: 0; border-radius: 0.5rem; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.modal-close { font-size: 1.5rem; cursor: pointer; color: #6c757d; }
+</style>
+
+<script>
+let editingSaleId = null;
+
+function showAddSaleModal() {
+    editingSaleId = null;
+    document.getElementById('sale-modal-title').textContent = 'Add Sale';
+    document.getElementById('sale-form').reset();
+    document.getElementById('sale_date').valueAsDate = new Date();
+    calcSaleTotal();
+    document.getElementById('sale-modal').style.display = 'block';
+}
+
+function calcSaleTotal() {
+    const qty = parseFloat(document.getElementById('quantity').value) || 0;
+    const price = parseFloat(document.getElementById('unit_price').value) || 0;
+    document.getElementById('total_amount').value = (qty * price).toFixed(2);
+}
+
+async function saveSale() {
+    const data = {
+        sale_date: document.getElementById('sale_date').value,
+        customer_name: document.getElementById('customer_name').value,
+        customer_phone: document.getElementById('customer_phone').value,
+        quantity: parseInt(document.getElementById('quantity').value) || 1,
+        unit_price: parseFloat(document.getElementById('unit_price').value) || 0,
+        total_amount: parseFloat(document.getElementById('total_amount').value) || 0,
+        payment_method: document.getElementById('payment_method').value,
+        payment_status: document.getElementById('payment_status').value,
+        notes: document.getElementById('notes').value
+    };
+
+    if (!data.customer_name || !data.unit_price) { alert('Customer name and unit price required'); return; }
+
+    try {
+        const url = editingSaleId ? `/api/sales/${editingSaleId}` : '/api/sales';
+        const res = await fetch(url, {
+            method: editingSaleId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            closeSaleModal();
+            loadSalesData();
+            showNotification('Sale saved!', 'success');
+        }
+    } catch (err) {
+        showNotification('Error: ' + err.message, 'error');
+    }
+}
+
+function closeSaleModal() {
+    document.getElementById('sale-modal').style.display = 'none';
+    editingSaleId = null;
+}
+
+async function loadSalesData() {
+    try {
+        const [statsRes, salesRes] = await Promise.all([
+            fetch('/api/sales/stats').then(r => r.json()),
+            fetch('/api/sales').then(r => r.json())
+        ]);
+        const stats = statsRes.data || {};
+        document.getElementById('total-revenue').textContent = '$' + (parseFloat(stats.total_revenue) || 0).toFixed(2);
+        document.getElementById('total-sales').textContent = stats.total_sales || 0;
+
+        const sales = salesRes.data || [];
+        if (sales.length === 0) {
+            document.getElementById('sales-content').innerHTML = '<p class="text-muted">No sales found.</p>';
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Customer</th><th>Chicken/Batch</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        sales.forEach(s => {
+            const sc = s.payment_status === 'paid' ? 'success' : s.payment_status === 'partial' ? 'warning' : 'danger';
+            html += `<tr>
+                <td>${s.sale_date ? new Date(s.sale_date).toLocaleDateString() : 'N/A'}</td>
+                <td>${s.customer_name || 'N/A'}</td>
+                <td>${s.tag_number || s.batch_number || 'N/A'}</td>
+                <td>${s.quantity || 1}</td>
+                <td>$${(parseFloat(s.unit_price) || 0).toFixed(2)}</td>
+                <td>$${(parseFloat(s.total_amount) || 0).toFixed(2)}</td>
+                <td><span class="badge badge-${sc}">${s.payment_status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="EditSale(${s.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="DeleteSale(${s.id})">Delete</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('sales-content').innerHTML = html;
+    } catch (err) {
+        document.getElementById('sales-content').innerHTML = '<p class="text-danger">Error loading sales.</p>';
+    }
+}
+
+async function EditSale(id) {
+    const res = await fetch(`/api/sales/${id}`);
+    const data = await res.json();
+    if (data.status === 'success') {
+        editingSaleId = id;
+        document.getElementById('sale-modal-title').textContent = 'Edit Sale';
+        document.getElementById('sale_date').value = data.data.sale_date;
+        document.getElementById('customer_name').value = data.data.customer_name || '';
+        document.getElementById('customer_phone').value = data.data.customer_phone || '';
+        document.getElementById('quantity').value = data.data.quantity || 1;
+        document.getElementById('unit_price').value = data.data.unit_price || '';
+        document.getElementById('payment_method').value = data.data.payment_method || 'cash';
+        document.getElementById('payment_status').value = data.data.payment_status || 'paid';
+        document.getElementById('notes').value = data.data.notes || '';
+        calcSaleTotal();
+        document.getElementById('sale-modal').style.display = 'block';
+    }
+}
+
+async function DeleteSale(id) {
+    if (!confirm('Delete this sale?')) return;
+    await fetch(`/api/sales/${id}`, { method: 'DELETE' });
+    showNotification('Sale deleted', 'success');
+    loadSalesData();
+}
+
+// Initialize
+loadSalesData();
+</script>

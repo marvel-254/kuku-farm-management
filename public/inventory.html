@@ -1,0 +1,255 @@
+<div class="page-navigation">
+    <a href="#" data-navigate="dashboard" class="btn btn-outline-primary">← Back to Dashboard</a>
+</div>
+
+<div class="page-header">
+    <h1>Inventory</h1>
+    <p>Manage inventory items and stock levels</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">I</div>
+        <div class="stat-content">
+            <h3 id="total-items">0</h3>
+            <p>Total Items</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-value">$0.00</h3>
+            <p>Inventory Value</p>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h3>Inventory Items</h3>
+        <button class="btn btn-primary" onclick="addItem()">Add Item</button>
+    </div>
+    <div class="card-body" id="items-content">
+        <div class="text-center"><div class="spinner"></div><p>Loading...</p></div>
+    </div>
+</div>
+
+<script>
+async function loadInventoryData() {
+    try {
+        const res = await fetch('/api/items');
+        const data = await res.json();
+        const items = data.data || [];
+
+        document.getElementById('total-items').textContent = items.length;
+
+        const valueRes = await fetch('/api/items/inventory-value');
+        const valueData = await valueRes.json();
+        document.getElementById('total-value').textContent = '$' + (parseFloat(valueData.total_value) || 0).toFixed(2);
+
+        if (items.length === 0) {
+            document.getElementById('items-content').innerHTML = '<p class="text-muted">No items found.</p>';
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Category</th><th>Unit</th><th>Unit Cost</th><th>Current Stock</th><th>Value</th><th>Actions</th></tr></thead><tbody>';
+        items.forEach(item => {
+            const stock = parseFloat(item.current_stock) || 0;
+            const val = stock * (parseFloat(item.unit_cost) || 0);
+            html += `<tr>
+                <td>${item.name}</td>
+                <td><span class="badge badge-${item.category === 'feed' ? 'success' : item.category === 'medicine' ? 'warning' : 'primary'}">${item.category}</span></td>
+                <td>${item.unit}</td>
+                <td>$${(parseFloat(item.unit_cost) || 0).toFixed(2)}</td>
+                <td>${stock.toFixed(2)}</td>
+                <td>$${val.toFixed(2)}</td>
+                <td>
+                    <a href="#" onclick="editItem(${item.id})" class="btn btn-sm btn-info">Edit</a>
+                    <a href="#" onclick="updateStock(${item.id})" class="btn btn-sm btn-primary">Stock</a>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('items-content').innerHTML = html;
+    } catch (err) {
+        document.getElementById('items-content').innerHTML = '<p class="text-danger">Error loading items.</p>';
+    }
+}
+
+function addItem() {
+    const modal = document.getElementById('item-modal');
+    document.getElementById('modal-title').textContent = 'Add Inventory Item';
+    document.getElementById('item-form').reset();
+    modal.style.display = 'block';
+}
+
+function editItem(id) {
+    fetch(`/api/items/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const item = data.item;
+                document.getElementById('modal-title').textContent = 'Edit Item';
+                document.getElementById('item_name').value = item.name;
+                document.getElementById('item_category').value = item.category;
+                document.getElementById('item_unit').value = item.unit;
+                document.getElementById('item_unit_cost').value = item.unit_cost;
+                document.getElementById('item_supplier').value = item.supplier || '';
+                document.getElementById('item_description').value = item.description || '';
+                currentEditId = id;
+                document.getElementById('item-modal').style.display = 'block';
+            }
+        });
+}
+
+let currentEditId = null;
+
+async function saveItem() {
+    const data = {
+        name: document.getElementById('item_name').value,
+        category: document.getElementById('item_category').value,
+        unit: document.getElementById('item_unit').value,
+        unit_cost: parseFloat(document.getElementById('item_unit_cost').value) || 0,
+        supplier: document.getElementById('item_supplier').value,
+        description: document.getElementById('item_description').value
+    };
+
+    if (!data.name || !data.unit) { alert('Name and unit required'); return; }
+
+    try {
+        const url = currentEditId ? `/api/items/${currentEditId}` : '/api/items';
+        const res = await fetch(url, {
+            method: currentEditId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            document.getElementById('item-modal').style.display = 'none';
+            currentEditId = null;
+            loadInventoryData();
+            showNotification('Item saved!', 'success');
+        }
+    } catch (err) {
+        showNotification('Error: ' + err.message, 'error');
+    }
+}
+
+function updateStock(id) {
+    fetch(`/api/items/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const item = data.item;
+                let html = `
+                    <div class="page-navigation"><a href="#" data-navigate="inventory" class="btn btn-outline-secondary">← Back</a></div>
+                    <div class="page-header"><h1>Update Stock</h1><p>${item.name}</p></div>
+                    <div class="row">
+                        <div class="col-md-6"><div class="card"><div class="card-body text-center"><div class="stat-large">${item.current_stock} ${item.unit}</div><p class="text-muted">Current Stock</p></div></div></div>
+                        <div class="col-md-6"><div class="card"><div class="card-body text-center"><div class="stat-large">$${(parseFloat(item.current_stock) * (parseFloat(item.unit_cost) || 0)).toFixed(2)}</div><p class="text-muted">Current Value</p></div></div></div>
+                    </div>
+                    <div class="card mt-4">
+                        <div class="card-header"><h3>Add Stock Transaction</h3></div>
+                        <div class="card-body">
+                            <form onsubmit="updateStockTransaction(event, ${id})">
+                                <div class="form-group">
+                                    <label>Type</label>
+                                    <select id="tx-type" class="form-control">
+                                        <option value="in">Stock In</option>
+                                        <option value="out">Stock Out</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantity</label>
+                                    <input type="number" id="tx-qty" class="form-control" step="0.01" min="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Notes</label>
+                                    <textarea id="tx-notes" class="form-control" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Stock</button>
+                                <a href="#" data-navigate="inventory" class="btn btn-secondary">Cancel</a>
+                            </form>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('page-container').innerHTML = html;
+                setupNavigationListeners();
+            }
+        });
+}
+
+async function updateStockTransaction(e, itemId) {
+    e.preventDefault();
+    const qty = parseFloat(document.getElementById('tx-qty').value);
+    const type = document.getElementById('tx-type').value;
+    const notes = document.getElementById('tx-notes').value;
+
+    const res = await fetch('/api/inventory/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId, transaction_type: type, quantity: qty, notes })
+    });
+
+    if (res.ok) {
+        showNotification('Stock updated!', 'success');
+        updateStock(itemId);
+    }
+}
+
+function closeItemModal() {
+    document.getElementById('item-modal').style.display = 'none';
+    currentEditId = null;
+}
+
+// Initialize
+loadInventoryData();
+</script>
+
+<style>
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 5% auto; padding: 0; border-radius: 0.5rem; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.modal-close { font-size: 1.5rem; cursor: pointer; color: #6c757d; }
+</style>
+
+<div id="item-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="modal-title">Add Item</h4>
+            <span class="modal-close" onclick="closeItemModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="item-form" onsubmit="event.preventDefault();saveItem()">
+                <div class="form-group"><label>Name *</label><input type="text" id="item_name" class="form-control" required></div>
+                <div class="form-group"><label>Category *</label>
+                    <select id="item_category" class="form-control" required>
+                        <option value="feed">Feed</option>
+                        <option value="medicine">Medicine</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="supplies">Supplies</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Unit *</label>
+                    <select id="item_unit" class="form-control" required>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="g">Gram (g)</option>
+                        <option value="liter">Liter</option>
+                        <option value="ml">Milliliter (ml)</option>
+                        <option value="bottle">Bottle</option>
+                        <option value="box">Box</option>
+                        <option value="unit">Unit</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Unit Cost ($)</label><input type="number" id="item_unit_cost" class="form-control" step="0.01" min="0"></div>
+                <div class="form-group"><label>Supplier</label><input type="text" id="item_supplier" class="form-control"></div>
+                <div class="form-group"><label>Description</label><textarea id="item_description" class="form-control" rows="3"></textarea></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeItemModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveItem()">Save</button>
+        </div>
+    </div>
+</div>

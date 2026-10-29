@@ -1,0 +1,198 @@
+<div class="page-navigation">
+    <a href="#" data-navigate="dashboard" class="btn btn-outline-primary">← Back to Dashboard</a>
+</div>
+
+<div class="page-header">
+    <h1>Expenses</h1>
+    <p>Track farm expenses and costs</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-expenses">$0.00</h3>
+            <p>Total Expenses</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">T</div>
+        <div class="stat-content">
+            <h3 id="total-transactions">0</h3>
+            <p>Total Transactions</p>
+            <small>This month</small>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h3>Expense Records</h3>
+        <button class="btn btn-primary" onclick="showAddExpenseModal()">Add Expense</button>
+    </div>
+    <div class="card-body" id="expenses-content">
+        <div class="text-center"><div class="spinner"></div><p>Loading...</p></div>
+    </div>
+</div>
+
+<!-- Expense Modal -->
+<div id="expense-modal" class="modal" style="display:none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="expense-modal-title">Add Expense</h4>
+            <span class="modal-close" onclick="closeExpenseModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="expense-form" onsubmit="event.preventDefault();saveExpense()">
+                <div class="form-group"><label>Category *</label>
+                    <select id="expense_category" class="form-control" required>
+                        <option value="feed">Feed</option>
+                        <option value="medicine">Medicine</option>
+                        <option value="labor">Labor</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="utilities">Utilities</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Description *</label><input type="text" id="expense_description" class="form-control" required></div>
+                <div class="form-group"><label>Amount ($) *</label><input type="number" id="expense_amount" class="form-control" step="0.01" min="0" required></div>
+                <div class="form-group"><label>Date *</label><input type="date" id="expense_date" class="form-control" required></div>
+                <div class="form-group"><label>Supplier</label><input type="text" id="expense_supplier" class="form-control"></div>
+                <div class="form-group"><label>Payment Method</label>
+                    <select id="expense_payment" class="form-control">
+                        <option value="cash">Cash</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Notes</label><textarea id="expense_notes" class="form-control" rows="2"></textarea></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveExpense()">Save Expense</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 5% auto; padding: 0; border-radius: 0.5rem; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.modal-close { font-size: 1.5rem; cursor: pointer; color: #6c757d; }
+</style>
+
+<script>
+let editingExpenseId = null;
+
+function showAddExpenseModal() {
+    editingExpenseId = null;
+    document.getElementById('expense-modal-title').textContent = 'Add Expense';
+    document.getElementById('expense-form').reset();
+    document.getElementById('expense_date').valueAsDate = new Date();
+    document.getElementById('expense-modal').style.display = 'block';
+}
+
+async function saveExpense() {
+    const data = {
+        category: document.getElementById('expense_category').value,
+        description: document.getElementById('expense_description').value,
+        amount: parseFloat(document.getElementById('expense_amount').value) || 0,
+        expense_date: document.getElementById('expense_date').value,
+        supplier: document.getElementById('expense_supplier').value,
+        payment_method: document.getElementById('expense_payment').value,
+        notes: document.getElementById('expense_notes').value
+    };
+
+    if (!data.description || !data.amount) { alert('Description and amount required'); return; }
+
+    try {
+        const url = editingExpenseId ? `/api/expenses/${editingExpenseId}` : '/api/expenses';
+        const res = await fetch(url, {
+            method: editingExpenseId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            closeExpenseModal();
+            loadExpensesData();
+            showNotification('Expense saved!', 'success');
+        }
+    } catch (err) {
+        showNotification('Error: ' + err.message, 'error');
+    }
+}
+
+function closeExpenseModal() {
+    document.getElementById('expense-modal').style.display = 'none';
+    editingExpenseId = null;
+}
+
+async function loadExpensesData() {
+    try {
+        const [statsRes, expensesRes] = await Promise.all([
+            fetch('/api/expenses/stats').then(r => r.json()),
+            fetch('/api/expenses').then(r => r.json())
+        ]);
+        const stats = statsRes.data || {};
+        document.getElementById('total-expenses').textContent = '$' + (parseFloat(stats.total_amount) || 0).toFixed(2);
+        document.getElementById('total-transactions').textContent = stats.total_expenses || 0;
+
+        const expenses = expensesRes.data || [];
+        if (expenses.length === 0) {
+            document.getElementById('expenses-content').innerHTML = '<p class="text-muted">No expenses found.</p>';
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Supplier</th><th>Actions</th></tr></thead><tbody>';
+        expenses.forEach(e => {
+            const cc = e.category === 'feed' ? 'success' : e.category === 'medicine' ? 'warning' : 'primary';
+            html += `<tr>
+                <td>${e.expense_date ? new Date(e.expense_date).toLocaleDateString() : 'N/A'}</td>
+                <td><span class="badge badge-${cc}">${e.category}</span></td>
+                <td>${e.description}</td>
+                <td>$${(parseFloat(e.amount) || 0).toFixed(2)}</td>
+                <td>${e.supplier || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="EditExpense(${e.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="DeleteExpense(${e.id})">Delete</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('expenses-content').innerHTML = html;
+    } catch (err) {
+        document.getElementById('expenses-content').innerHTML = '<p class="text-danger">Error loading expenses.</p>';
+    }
+}
+
+async function EditExpense(id) {
+    const res = await fetch(`/api/expenses/${id}`);
+    const data = await res.json();
+    if (data.status === 'success') {
+        editingExpenseId = id;
+        document.getElementById('expense-modal-title').textContent = 'Edit Expense';
+        document.getElementById('expense_category').value = data.data.category || 'other';
+        document.getElementById('expense_description').value = data.data.description || '';
+        document.getElementById('expense_amount').value = data.data.amount || '';
+        document.getElementById('expense_date').value = data.data.expense_date || '';
+        document.getElementById('expense_supplier').value = data.data.supplier || '';
+        document.getElementById('expense_payment').value = data.data.payment_method || 'cash';
+        document.getElementById('expense_notes').value = data.data.notes || '';
+        document.getElementById('expense-modal').style.display = 'block';
+    }
+}
+
+async function DeleteExpense(id) {
+    if (!confirm('Delete this expense?')) return;
+    await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+    showNotification('Expense deleted', 'success');
+    loadExpensesData();
+}
+
+// Initialize
+loadExpensesData();
+</script>

@@ -1,0 +1,199 @@
+<div class="page-navigation">
+    <a href="#" data-navigate="dashboard" class="btn btn-outline-primary">← Back to Dashboard</a>
+</div>
+
+<div class="page-header">
+    <h1>Invoices</h1>
+    <p>Manage sales and purchase invoices</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">I</div>
+        <div class="stat-content">
+            <h3 id="total-invoices">0</h3>
+            <p>Total Invoices</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">$</div>
+        <div class="stat-content">
+            <h3 id="total-amount">$0.00</h3>
+            <p>Total Value</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">P</div>
+        <div class="stat-content">
+            <h3 id="total-paid">$0.00</h3>
+            <p>Total Paid</p>
+            <small>This month</small>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">O</div>
+        <div class="stat-content">
+            <h3 id="total-outstanding">$0.00</h3>
+            <p>Outstanding</p>
+            <small>All time</small>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h3>All Invoices</h3>
+        <button class="btn btn-primary" onclick="showAddInvoiceModal()">Add Invoice</button>
+    </div>
+    <div class="card-body" id="invoices-content">
+        <div class="text-center"><div class="spinner"></div><p>Loading...</p></div>
+    </div>
+</div>
+
+<!-- Invoice Modal -->
+<div id="invoice-modal" class="modal" style="display:none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="invoice-modal-title">Add Invoice</h4>
+            <span class="modal-close" onclick="closeInvoiceModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="invoice-form" onsubmit="event.preventDefault();saveInvoice()">
+                <div class="form-group"><label>Type *</label>
+                    <select id="invoice_type" class="form-control" required>
+                        <option value="sale">Sales Invoice</option>
+                        <option value="purchase">Purchase Invoice</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Customer/Supplier *</label><input type="text" id="invoice_customer" class="form-control" required></div>
+                <div class="form-group"><label>Phone</label><input type="tel" id="invoice_phone" class="form-control"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="invoice_email" class="form-control"></div>
+                <div class="form-group"><label>Date *</label><input type="date" id="invoice_date" class="form-control" required></div>
+                <div class="form-group"><label>Due Date</label><input type="date" id="invoice_due" class="form-control"></div>
+                <div class="form-group"><label>Total Amount ($) *</label><input type="number" id="invoice_total" class="form-control" step="0.01" min="0" required></div>
+                <div class="form-group"><label>Tax ($)</label><input type="number" id="invoice_tax" class="form-control" step="0.01" min="0"></div>
+                <div class="form-group"><label>Discount ($)</label><input type="number" id="invoice_discount" class="form-control" step="0.01" min="0"></div>
+                <div class="form-group"><label>Terms</label><input type="text" id="invoice_terms" class="form-control" placeholder="e.g., Net 30 days"></div>
+                <div class="form-group"><label>Notes</label><textarea id="invoice_notes" class="form-control" rows="2"></textarea></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeInvoiceModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveInvoice()">Create Invoice</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 5% auto; padding: 0; border-radius: 0.5rem; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.modal-close { font-size: 1.5rem; cursor: pointer; color: #6c757d; }
+</style>
+
+<script>
+let editingInvoiceId = null;
+
+function showAddInvoiceModal() {
+    editingInvoiceId = null;
+    document.getElementById('invoice-modal-title').textContent = 'Add Invoice';
+    document.getElementById('invoice-form').reset();
+    document.getElementById('invoice_date').valueAsDate = new Date();
+    document.getElementById('invoice-modal').style.display = 'block';
+}
+
+async function saveInvoice() {
+    const data = {
+        type: document.getElementById('invoice_type').value,
+        customer_supplier_name: document.getElementById('invoice_customer').value,
+        customer_supplier_phone: document.getElementById('invoice_phone').value,
+        customer_supplier_email: document.getElementById('invoice_email').value,
+        invoice_date: document.getElementById('invoice_date').value,
+        due_date: document.getElementById('invoice_due').value,
+        total_amount: parseFloat(document.getElementById('invoice_total').value) || 0,
+        tax_amount: parseFloat(document.getElementById('invoice_tax').value) || 0,
+        discount_amount: parseFloat(document.getElementById('invoice_discount').value) || 0,
+        payment_terms: document.getElementById('invoice_terms').value,
+        notes: document.getElementById('invoice_notes').value
+    };
+
+    if (!data.customer_supplier_name || !data.total_amount) { alert('Customer and total amount required'); return; }
+
+    try {
+        const url = editingInvoiceId ? `/api/invoices/${editingInvoiceId}` : '/api/invoices';
+        const res = await fetch(url, {
+            method: editingInvoiceId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            closeInvoiceModal();
+            loadInvoicesData();
+            showNotification('Invoice created!', 'success');
+        }
+    } catch (err) {
+        showNotification('Error: ' + err.message, 'error');
+    }
+}
+
+function closeInvoiceModal() {
+    document.getElementById('invoice-modal').style.display = 'none';
+    editingInvoiceId = null;
+}
+
+async function loadInvoicesData() {
+    try {
+        const [statsRes, invoicesRes] = await Promise.all([
+            fetch('/api/invoices/stats').then(r => r.json()),
+            fetch('/api/invoices').then(r => r.json())
+        ]);
+        const stats = statsRes.data || {};
+        document.getElementById('total-invoices').textContent = stats.total_invoices || 0;
+        document.getElementById('total-amount').textContent = '$' + (parseFloat(stats.total_amount) || 0).toFixed(2);
+        document.getElementById('total-paid').textContent = '$' + (parseFloat(stats.total_paid) || 0).toFixed(2);
+        document.getElementById('total-outstanding').textContent = '$' + (parseFloat(stats.total_outstanding) || 0).toFixed(2);
+
+        const invoices = invoicesRes.data || [];
+        if (invoices.length === 0) {
+            document.getElementById('invoices-content').innerHTML = '<p class="text-muted">No invoices found.</p>';
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Invoice #</th><th>Type</th><th>Customer/Supplier</th><th>Date</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        invoices.forEach(inv => {
+            const sc = inv.status === 'paid' ? 'success' : inv.status === 'overdue' ? 'danger' : inv.status === 'partial' ? 'warning' : 'secondary';
+            const outstanding = (parseFloat(inv.total_amount) || 0) - (parseFloat(inv.paid_amount) || 0);
+            html += `<tr>
+                <td>${inv.invoice_number}</td>
+                <td><span class="badge badge-${inv.type === 'sale' ? 'success' : 'info'}">${inv.type}</span></td>
+                <td>${inv.customer_supplier_name}</td>
+                <td>${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString() : 'N/A'}</td>
+                <td>$${(parseFloat(inv.total_amount) || 0).toFixed(2)}</td>
+                <td>$${(parseFloat(inv.paid_amount) || 0).toFixed(2)}</td>
+                <td>$${outstanding.toFixed(2)}</td>
+                <td><span class="badge badge-${sc}">${inv.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="ViewInvoice(${inv.id})">View</button>
+                    <button class="btn btn-sm btn-primary" onclick="EditInvoice(${inv.id})">Edit</button>
+                    ${outstanding > 0 ? `<button class="btn btn-sm btn-success" onclick="AddInvoicePayment(${inv.id})">Pay</button>` : ''}
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('invoices-content').innerHTML = html;
+    } catch (err) {
+        document.getElementById('invoices-content').innerHTML = '<p class="text-danger">Error loading invoices.</p>';
+    }
+}
+
+function ViewInvoice(id) { showNotification(`Viewing invoice ${id}`, 'info'); }
+function EditInvoice(id) { showNotification(`Edit invoice ${id}`, 'info'); }
+function AddInvoicePayment(id) { showNotification(`Add payment to invoice ${id}`, 'info'); }
+
+// Initialize
+loadInvoicesData();
+</script>

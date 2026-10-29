@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUKU Farm Management System</title>
+    <link rel="stylesheet" href="assets/css/professional.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #2c3e50, #34495e);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-header h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            padding: 0 1rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1rem;
+            margin-bottom: 0.5rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .sidebar-icon {
+            font-size: 1.8rem;
+            margin-right: 1rem;
+            width: 40px;
+            text-align: center;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+
+        .page-container {
+            max-width: 100%;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        .notification.success { background: #27ae60; }
+        .notification.error { background: #e74c3c; }
+        .notification.info { background: #3498db; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .login-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .login-box h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .login-box p {
+            color: #7f8c8d;
+            font-size: 0.875rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-box .info {
+            background: rgba(52, 152, 219, 0.1);
+            color: #2980b9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            border: 1px solid #3498db;
+            text-align: center;
+        }
+
+        .login-box .info strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Login View (shown when not authenticated) -->
+    <div id="login-view" class="login-view">
+        <div class="login-box">
+            <div class="login-logo">K</div>
+            <h1>KUKU Farm</h1>
+            <p>Management System - Please login to continue</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="username" class="form-control" required placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" required placeholder="Enter password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Login to KUKU</button>
+            </form>
+
+            <div id="login-error" class="alert alert-danger" style="display:none">
+                <strong>Login Failed</strong>
+                <p id="error-message"></p>
+            </div>
+
+            <div class="info">
+                <strong>Default Login Credentials</strong>
+                Username: admin<br>
+                Password: admin123
+            </div>
+        </div>
+    </div>
+
+    <!-- App Container (shown when authenticated) -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>KUKU Farm</h2>
+                <p>Management System</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-link active" data-page="dashboard">
+                    <div class="sidebar-icon">🏠</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Dashboard</span>
+                        <span class="sidebar-subtitle">Overview</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="chickens">
+                    <div class="sidebar-icon">🐔</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Chickens</span>
+                        <span class="sidebar-subtitle" id="chicken-count">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="inventory">
+                    <div class="sidebar-icon">📦</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Inventory</span>
+                        <span class="sidebar-subtitle" id="inventory-count">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="sales">
+                    <div class="sidebar-icon">$</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Sales</span>
+                        <span class="sidebar-subtitle" id="sales-count">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="expenses">
+                    <div class="sidebar-icon">💸</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Expenses</span>
+                        <span class="sidebar-subtitle" id="expenses-count">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="invoices">
+                    <div class="sidebar-icon">📄</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Invoices</span>
+                        <span class="sidebar-subtitle" id="invoices-count">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="debts">
+                    <div class="sidebar-icon">💳</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Debts</span>
+                        <span class="sidebar-subtitle" id="debts-count">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="financial">
+                    <div class="sidebar-icon">📊</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Financial</span>
+                        <span class="sidebar-subtitle">Reports</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" data-page="reports">
+                    <div class="sidebar-icon">📈</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Reports</span>
+                        <span class="sidebar-subtitle">Analytics</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="page-container" id="page-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <h3>Loading KUKU Farm Management...</h3>
+                    <p>Please wait while we initialize the application.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notifications"></div>
+
+    <script>
+        const API_BASE = '';
+
+        // Global state
+        let currentPage = 'dashboard';
+        let appData = {};
+        let currentUser = null;
+
+        // ============================================
+        // AUTH
+        // ============================================
+
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/check`);
+                const data = await res.json();
+                if (data.loggedIn) {
+                    currentUser = data.user;
+                    showApp();
+                }
+            } catch (err) {
+                console.error('Auth check failed:', err);
+            }
+        }
+
+        async function login(username, password) {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    currentUser = data.user;
+                    showApp();
+                    navigateToPage('dashboard');
+                    return true;
+                } else {
+                    showError(data.error || 'Login failed');
+                    return false;
+                }
+            } catch (err) {
+                showError('Connection error. Please try again.');
+                return false;
+            }
+        }
+
+        function logout() {
+            await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
+            currentUser = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('login-error');
+            document.getElementById('error-message').textContent = msg;
+            el.style.display = 'block';
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                navigateToPage(this.getAttribute('data-page'));
+            });
+        });
+
+        async function navigateToPage(page) {
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-page="${page}"]`).classList.add('active');
+
+            currentPage = page;
+
+            const container = document.getElementById('page-container');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <h4>Loading ${page.charAt(0).toUpperCase() + page.slice(1)}...</h4>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${page}.html`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const html = await response.text();
+                container.innerHTML = html;
+
+                await loadPageData(page);
+                await initializePageScripts(page);
+                setupNavigationListeners();
+
+            } catch (error) {
+                console.error('Error loading page:', error);
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>Error Loading Page</h4>
+                        <p>Failed to load ${page}. Please try again.</p>
+                        <button class="btn btn-primary" onclick="navigateToPage('${page}')">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function setupNavigationListeners() {
+            document.querySelectorAll('[data-navigate]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    navigateToPage(this.getAttribute('data-navigate'));
+                });
+            });
+        }
+
+        // ============================================
+        // DATA LOADING
+        // ============================================
+
+        async function loadPageData(page) {
+            try {
+                switch (page) {
+                    case 'dashboard':
+                        await loadDashboardData();
+                        break;
+                    case 'chickens':
+                        await loadChickensData();
+                        break;
+                    case 'inventory':
+                        await loadInventoryData();
+                        break;
+                    case 'sales':
+                        await loadSalesData();
+                        break;
+                    case 'expenses':
+                        await loadExpensesData();
+                        break;
+                    case 'invoices':
+                        await loadInvoicesData();
+                        break;
+                    case 'debts':
+                        await loadDebtsData();
+                        break;
+                    case 'financial':
+                        await loadFinancialData();
+                        break;
+                }
+            } catch (error) {
+                console.error('Error loading page data:', error);
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                const [chickensRes, salesRes, expensesRes, invoicesRes, debtsRes,
+                       batchesRes, salesDataRes, expensesDataRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/chickens/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/sales/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/expenses/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/invoices/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/debts/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/chicken-batches`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/sales`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/expenses`).then(r => r.json())
+                ]);
+
+                const chickens = chickensRes.data || {};
+                const sales = salesRes.data || {};
+                const expenses = expensesRes.data || {};
+                const invoices = invoicesRes.data || {};
+                const debts = debtsRes.data || {};
+
+                document.getElementById('total-chickens').textContent = chickens.total_chickens || 0;
+                document.getElementById('healthy-chickens').textContent = `${chickens.healthy_chickens || 0} healthy`;
+
+                document.getElementById('total-revenue').textContent = `$${(sales.total_revenue || 0).toFixed(2)}`;
+
+                const receivables = (invoices.total_outstanding || 0);
+                const payables = (debts.total_outstanding || 0);
+                const cashFlow = (sales.total_revenue || 0) - (expenses.total_amount || 0);
+                const netPosition = cashFlow - payables + receivables;
+
+                document.getElementById('total-revenue').textContent = `$${(sales.total_revenue || 0).toFixed(2)}`;
+                document.getElementById('net-position').textContent = `$${netPosition.toFixed(2)}`;
+                document.getElementById('cash-flow').textContent = `$${cashFlow.toFixed(2)}`;
+
+                document.getElementById('position-status').textContent = netPosition >= 0 ? 'Positive' : 'Negative';
+                document.getElementById('position-status').className = netPosition >= 0 ? 'text-success' : 'text-danger';
+                document.getElementById('cash-flow-status').textContent = cashFlow >= 0 ? 'Surplus' : 'Deficit';
+                document.getElementById('cash-flow-status').className = cashFlow >= 0 ? 'text-success' : 'text-danger';
+
+                // Update sidebar counts
+                const chickenCount = chickens.total_chickens || 0;
+                document.getElementById('chicken-count').textContent = `${chickenCount} Total`;
+
+                const itemsRes = await fetch(`${API_BASE}/api/items`).then(r => r.json());
+                document.getElementById('inventory-count').textContent = `${itemsRes.data?.length || 0} Items`;
+
+                document.getElementById('sales-count').textContent = `$${(sales.total_revenue || 0).toFixed(2)}`;
+                document.getElementById('expenses-count').textContent = `${(expenses.total_expenses || 0)}`;
+                document.getElementById('invoices-count').textContent = `${(invoices.total_outstanding || 0).toFixed(2)} Outstanding`;
+                document.getElementById('debts-count').textContent = `${(debts.total_outstanding || 0).toFixed(2)} Outstanding`;
+
+                // Recent batches
+                updateRecentBatches(batchesRes.data || []);
+                updateRecentSales((salesDataRes.data || []).slice(0, 5));
+                updateRecentExpenses((expensesDataRes.data || []).slice(0, 5));
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        async function loadChickensData() {
+            try {
+                const [statsRes, batchesRes, groupsRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/chickens/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/chicken-batches`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/chicken-groups`).then(r => r.json())
+                ]);
+
+                const stats = statsRes.data || { total_chickens: 0, healthy_chickens: 0 };
+                const totalChickens = stats.total_chickens || 0;
+                const healthyChickens = stats.healthy_chickens || 0;
+
+                document.getElementById('total-chickens').textContent = totalChickens;
+                document.getElementById('healthy-chickens').textContent = `${healthyChickens} healthy`;
+                document.getElementById('healthy-count').textContent = healthyChickens;
+                document.getElementById('healthy-percentage').textContent = totalChickens > 0 ? `${Math.round((healthyChickens / totalChickens) * 100)}% of total` : '0% of total';
+                document.getElementById('total-batches').textContent = (batchesRes.data || []).length;
+                document.getElementById('other-status').textContent = totalChickens - healthyChickens;
+
+                updateBatchesTable(batchesRes.data || [], groupsRes.data || []);
+            } catch (error) {
+                console.error('Error loading chickens data:', error);
+            }
+        }
+
+        async function loadInventoryData() {
+            try {
+                const res = await fetch(`${API_BASE}/api/items`);
+                const data = await res.json();
+
+                const items = data.data || [];
+                document.getElementById('inventory-count').textContent = `${items.length} Items`;
+
+                updateItemsTable(items);
+            } catch (error) {
+                console.error('Error loading inventory data:', error);
+            }
+        }
+
+        async function loadSalesData() {
+            try {
+                const [statsRes, salesRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/sales/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/sales`).then(r => r.json())
+                ]);
+
+                const stats = statsRes.data || {};
+                document.getElementById('total-revenue').textContent = `$${(stats.total_revenue || 0).toFixed(2)}`;
+                document.getElementById('total-sales').textContent = stats.total_sales || 0;
+
+                updateSalesTable(salesRes.data || []);
+            } catch (error) {
+                console.error('Error loading sales data:', error);
+            }
+        }
+
+        async function loadExpensesData() {
+            try {
+                const [statsRes, expensesRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/expenses/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/expenses`).then(r => r.json())
+                ]);
+
+                const stats = statsRes.data || {};
+                document.getElementById('total-expenses').textContent = `$${(stats.total_amount || 0).toFixed(2)}`;
+                document.getElementById('total-transactions').textContent = stats.total_expenses || 0;
+
+                updateExpensesTable(expensesRes.data || []);
+            } catch (error) {
+                console.error('Error loading expenses data:', error);
+            }
+        }
+
+        async function loadInvoicesData() {
+            try {
+                const [statsRes, invoicesRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/invoices/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/invoices`).then(r => r.json())
+                ]);
+
+                const stats = statsRes.data || {};
+                updateInvoicesTable(invoicesRes.data || [], stats);
+            } catch (error) {
+                console.error('Error loading invoices data:', error);
+            }
+        }
+
+        async function loadDebtsData() {
+            try {
+                const [statsRes, debtsRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/debts/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/debts`).then(r => r.json())
+                ]);
+
+                const stats = statsRes.data || {};
+                updateDebtsTable(debtsRes.data || [], stats);
+            } catch (error) {
+                console.error('Error loading debts data:', error);
+            }
+        }
+
+        async function loadFinancialData() {
+            try {
+                const [salesRes, expensesRes, invoicesRes, debtsRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/sales/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/expenses/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/invoices/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/debts/stats`).then(r => r.json())
+                ]);
+
+                updateFinancialOverview(salesRes.data, expensesRes.data, invoicesRes.data, debtsRes.data);
+            } catch (error) {
+                console.error('Error loading financial data:', error);
+            }
+        }
+
+        // ============================================
+        // TABLE UPDATES
+        // ============================================
+
+        function updateRecentBatches(batches) {
+            const container = document.getElementById('recent-batches');
+            if (!container) return;
+
+            if (batches.length === 0) {
+                container.innerHTML = '<p class="text-muted">No recent batches</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Batch</th><th>Chickens</th><th>Date</th></tr></thead><tbody>';
+            batches.slice(0, 5).forEach(batch => {
+                html += `<tr>
+                    <td>${batch.batch_number}</td>
+                    <td>${batch.chicken_count || 'N/A'}</td>
+                    <td>${batch.purchase_date ? new Date(batch.purchase_date).toLocaleDateString() : 'N/A'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateRecentSales(sales) {
+            const container = document.getElementById('recent-sales');
+            if (!container) return;
+
+            if (sales.length === 0) {
+                container.innerHTML = '<p class="text-muted">No recent sales</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Customer</th><th>Amount</th></tr></thead><tbody>';
+            sales.forEach(sale => {
+                html += `<tr>
+                    <td>${sale.sale_date ? new Date(sale.sale_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>${sale.customer_name || 'N/A'}</td>
+                    <td>$${(parseFloat(sale.total_amount) || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateRecentExpenses(expenses) {
+            const container = document.getElementById('recent-expenses');
+            if (!container) return;
+
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="text-muted">No recent expenses</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Category</th><th>Amount</th></tr></thead><tbody>';
+            expenses.forEach(expense => {
+                html += `<tr>
+                    <td>${expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>${expense.category}</td>
+                    <td>$${(parseFloat(expense.amount) || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateBatchesTable(batches, groups) {
+            const container = document.getElementById('batches-content');
+            if (!container) return;
+
+            if (batches.length === 0) {
+                container.innerHTML = '<p class="text-muted">No chicken batches found. <button class="btn btn-primary btn-sm" onclick="showAddBatchModal()">Add your first batch</button></p>';
+                return;
+            }
+
+            let html = `<div class="table-responsive"><table class="table"><thead>
+                <tr><th>Batch Number</th><th>Group/Breed</th><th>Quantity</th><th>Healthy</th><th>Sick</th><th>Sold</th><th>Purchase Date</th><th>Actions</th></tr></thead><tbody>`;
+
+            batches.forEach(batch => {
+                html += `<tr>
+                    <td>${batch.batch_number}</td>
+                    <td>${batch.group_name || 'N/A'}</td>
+                    <td>${batch.chicken_count || 0}</td>
+                    <td><span class="badge badge-success">${batch.healthy_count || 0}</span></td>
+                    <td><span class="badge badge-warning">${batch.sick_count || 0}</span></td>
+                    <td><span class="badge badge-info">${batch.sold_count || 0}</span></td>
+                    <td>${batch.purchase_date ? new Date(batch.purchase_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewBatch(${batch.id})">View</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editBatch(${batch.id})">Edit</button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateItemsTable(items) {
+            const container = document.querySelector('.card-body');
+            if (!container) return;
+
+            if (items.length === 0) {
+                container.innerHTML = '<p class="text-muted">No inventory items found.</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Category</th><th>Unit</th><th>Unit Cost</th><th>Current Stock</th><th>Value</th><th>Actions</th></tr></thead><tbody>';
+
+            items.forEach(item => {
+                const stock = parseFloat(item.current_stock) || 0;
+                const value = stock * (parseFloat(item.unit_cost) || 0);
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td><span class="badge badge-${item.category === 'feed' ? 'success' : item.category === 'medicine' ? 'warning' : 'primary'}">${item.category}</span></td>
+                    <td>${item.unit}</td>
+                    <td>$${(parseFloat(item.unit_cost) || 0).toFixed(2)}</td>
+                    <td>${stock.toFixed(2)}</td>
+                    <td>$${value.toFixed(2)}</td>
+                    <td>
+                        <a href="#" onclick="editItem(${item.id})" class="btn btn-sm btn-info">Edit</a>
+                        <a href="#" onclick="updateStock(${item.id})" class="btn btn-sm btn-primary">Stock</a>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateSalesTable(sales) {
+            const container = document.getElementById('sales-content');
+            if (!container) return;
+
+            if (sales.length === 0) {
+                container.innerHTML = '<p class="text-muted">No sales records found.</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Customer</th><th>Chicken/Batch</th><th>Quantity</th><th>Unit Price</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+
+            sales.forEach(sale => {
+                const statusClass = sale.payment_status === 'paid' ? 'success' : sale.payment_status === 'partial' ? 'warning' : 'danger';
+                html += `<tr>
+                    <td>${sale.sale_date ? new Date(sale.sale_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>${sale.customer_name || 'N/A'}</td>
+                    <td>${sale.tag_number || sale.batch_number || 'N/A'}</td>
+                    <td>${sale.quantity || 1}</td>
+                    <td>$${(parseFloat(sale.unit_price) || 0).toFixed(2)}</td>
+                    <td>$${(parseFloat(sale.total_amount) || 0).toFixed(2)}</td>
+                    <td><span class="badge badge-${statusClass}">${sale.payment_status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editSale(${sale.id})">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateExpensesTable(expenses) {
+            const container = document.getElementById('expenses-content');
+            if (!container) return;
+
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="text-muted">No expense records found.</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Supplier</th><th>Actions</th></tr></thead><tbody>';
+
+            expenses.forEach(expense => {
+                const catClass = expense.category === 'feed' ? 'success' : expense.category === 'medicine' ? 'warning' : 'primary';
+                html += `<tr>
+                    <td>${expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : 'N/A'}</td>
+                    <td><span class="badge badge-${catClass}">${expense.category}</span></td>
+                    <td>${expense.description}</td>
+                    <td>$${(parseFloat(expense.amount) || 0).toFixed(2)}</td>
+                    <td>${expense.supplier || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editExpense(${expense.id})">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${expense.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateInvoicesTable(invoices, stats) {
+            const container = document.querySelector('.card-body');
+            if (!container) return;
+
+            if (invoices.length === 0) {
+                container.innerHTML = '<p class="text-muted">No invoices found.</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Invoice #</th><th>Type</th><th>Customer/Supplier</th><th>Date</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+
+            invoices.forEach(invoice => {
+                const statusClass = invoice.status === 'paid' ? 'success' : invoice.status === 'overdue' ? 'danger' : invoice.status === 'partial' ? 'warning' : 'secondary';
+                const outstanding = (parseFloat(invoice.total_amount) || 0) - (parseFloat(invoice.paid_amount) || 0);
+                html += `<tr>
+                    <td>${invoice.invoice_number}</td>
+                    <td><span class="badge badge-${invoice.type === 'sale' ? 'success' : 'info'}">${invoice.type}</span></td>
+                    <td>${invoice.customer_supplier_name}</td>
+                    <td>${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>$${(parseFloat(invoice.total_amount) || 0).toFixed(2)}</td>
+                    <td>$${(parseFloat(invoice.paid_amount) || 0).toFixed(2)}</td>
+                    <td>$${outstanding.toFixed(2)}</td>
+                    <td><span class="badge badge-${statusClass}">${invoice.status}</span></td>
+                    <td>
+                        <a href="#" onclick="viewInvoice(${invoice.id})" class="btn btn-sm btn-info">View</a>
+                        <a href="#" onclick="editInvoice(${invoice.id})" class="btn btn-sm btn-primary">Edit</a>
+                        ${outstanding > 0 ? `<a href="#" onclick="addInvoicePayment(${invoice.id})" class="btn btn-sm btn-success">Pay</a>` : ''}
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateDebtsTable(debts, stats) {
+            const container = document.querySelector('.card-body');
+            if (!container) return;
+
+            if (debts.length === 0) {
+                container.innerHTML = '<p class="text-muted">No debt records found.</p>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Debtor</th><th>Type</th><th>Amount</th><th>Paid</th><th>Outstanding</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+
+            debts.forEach(debt => {
+                const outstanding = (parseFloat(debt.amount) || 0) - (parseFloat(debt.paid_amount) || 0);
+                const typeText = debt.debt_type === 'owed_to_us' ? 'Owed to Us' : 'We Owe';
+                const statusClass = outstanding <= 0 ? 'success' : debt.status === 'active' ? 'warning' : 'secondary';
+                html += `<tr>
+                    <td>${debt.debtor_name}</td>
+                    <td><span class="badge badge-${debt.debt_type === 'owed_to_us' ? 'success' : 'warning'}">${typeText}</span></td>
+                    <td>$${(parseFloat(debt.amount) || 0).toFixed(2)}</td>
+                    <td>$${(parseFloat(debt.paid_amount) || 0).toFixed(2)}</td>
+                    <td>$${outstanding.toFixed(2)}</td>
+                    <td>${debt.due_date ? new Date(debt.due_date).toLocaleDateString() : 'N/A'}</td>
+                    <td><span class="badge badge-${statusClass}">${debt.status}</span></td>
+                    <td>
+                        <a href="#" onclick="viewDebt(${debt.id})" class="btn btn-sm btn-info">View</a>
+                        <a href="#" onclick="editDebt(${debt.id})" class="btn btn-sm btn-primary">Edit</a>
+                        ${outstanding > 0 && debt.status === 'active' ? `<a href="#" onclick="addDebtPayment(${debt.id})" class="btn btn-sm btn-success">Pay</a>` : ''}
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updateFinancialOverview(sales, expenses, invoices, debts) {
+            // Update figures on financial page if elements exist
+            const updateEl = (id, value, prefix = '$', suffix = '') => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = `${prefix}${value.toFixed(2)}${suffix}`;
+            };
+
+            updateEl('total-revenue', sales?.total_revenue || 0);
+            updateEl('total-expenses', expenses?.total_amount || 0);
+            updateEl('total-invoices', invoices?.total_amount || 0);
+            updateEl('outstanding-invoices', invoices?.total_outstanding || 0);
+            updateEl('total-debts', debts?.total_amount || 0);
+            updateEl('outstanding-debts', debts?.total_outstanding || 0);
+
+            const netProfit = (sales?.total_revenue || 0) - (expenses?.total_amount || 0);
+            updateEl('net-profit', netProfit);
+        }
+
+        // ============================================
+        // WEATHER
+        // ============================================
+
+        async function loadWeather() {
+            try {
+                const res = await fetch(`${API_BASE}/api/weather`);
+                const data = await res.json();
+
+                if (data.current && data.current.success) {
+                    const w = data.current;
+                    const html = `
+                        <div class="text-center">
+                            <h4>${w.city || 'Current Location'}, ${w.country || ''}</h4>
+                            <img src="https://openweathermap.org/img/wn/${w.icon}@2x.png" alt="${w.description}" style="width:80px;height:80px">
+                            <h3>${w.temperature}°C</h3>
+                            <p class="text-muted text-capitalize">${w.description}</p>
+                            <div class="row text-center mt-3">
+                                <div class="col-4"><small>Humidity</small><br><strong>${w.humidity}%</strong></div>
+                                <div class="col-4"><small>Wind</small><br><strong>${w.wind_speed} m/s</strong></div>
+                                <div class="col-4"><small>Pressure</small><br><strong>${w.pressure} hPa</strong></div>
+                            </div>
+                        </div>
+                    `;
+                    const widget = document.getElementById('weather-widget');
+                    if (widget) widget.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Weather error:', error);
+                const widget = document.getElementById('weather-widget');
+                if (widget) widget.innerHTML = '<p class="text-muted">Weather unavailable</p>';
+            }
+        }
+
+        // ============================================
+        // CHARTS
+        // ============================================
+
+        function createQuickChart() {
+            const ctx = document.getElementById('quickChart');
+            if (!ctx) return;
+
+            new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: [1200, 1900, 3000, 5000, 2000, 3000],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: value => '$' + value }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================
+        // PAGE SCRIPTS
+        // ============================================
+
+        async function initializePageScripts(page) {
+            switch (page) {
+                case 'dashboard':
+                    await loadWeather();
+                    createQuickChart();
+                    break;
+                case 'financial':
+                    createQuickChart();
+                    break;
+            }
+        }
+
+        // ============================================
+        // MENU ACTIONS
+        // ============================================
+
+        function handleMenuAction(action) {
+            switch (action) {
+                case 'export':
+                    handleExport();
+                    break;
+                case 'import':
+                    handleImport();
+                    break;
+                case 'settings':
+                    showNotification('Settings coming soon!', 'info');
+                    break;
+                case 'docs':
+                    showNotification('Documentation coming soon!', 'info');
+                    break;
+                case 'new-record':
+                    showNotification('Quick add coming soon!', 'info');
+                    break;
+            }
+        }
+
+        async function handleExport() {
+            try {
+                const res = await fetch(`${API_BASE}/api/export`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'kuku_farm_backup.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showNotification('Data exported successfully!', 'success');
+                }
+            } catch (error) {
+                showNotification('Export failed: ' + error.message, 'error');
+            }
+        }
+
+        async function handleImport() {
+            try {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+
+                    const res = await fetch(`${API_BASE}/api/import`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data })
+                    });
+                    const result = await res.json();
+
+                    if (result.status === 'success') {
+                        showNotification('Data imported successfully!', 'success');
+                        loadPageData(currentPage);
+                    } else {
+                        showNotification('Import failed: ' + (result.error || 'Unknown error'), 'error');
+                    }
+                };
+                input.click();
+            } catch (error) {
+                showNotification('Import failed: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // NOTIFICATIONS
+        // ============================================
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div>${message}</div>
+                <button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;color:white;font-size:20px;margin-left:10px">×</button>
+            `;
+            document.getElementById('notifications').appendChild(notification);
+            setTimeout(() => {
+                if (notification.parentElement) notification.remove();
+            }, 5000);
+        }
+
+        // ============================================
+        // GLOBAL FUNCTIONS FOR PAGE INTERACTIONS
+        // ============================================
+
+        function viewBatch(id) {
+            navigateToPage('chickens');
+            // Could open a modal instead
+            showNotification(`Viewing batch ${id}`, 'info');
+        }
+
+        function editBatch(id) {
+            // Load batch form modal
+            showNotification(`Edit batch ${id}`, 'info');
+        }
+
+        function showAddBatchModal() {
+            showNotification('Add batch form coming soon!', 'info');
+        }
+
+        function closeBatchModal() {
+            document.getElementById('batch-modal').style.display = 'none';
+        }
+
+        function editItem(id) {
+            showNotification(`Edit item ${id}`, 'info');
+        }
+
+        function updateStock(id) {
+            showNotification(`Update stock for item ${id}`, 'info');
+        }
+
+        function editSale(id) {
+            showNotification(`Edit sale ${id}`, 'info');
+        }
+
+        async function deleteSale(id) {
+            if (!confirm('Are you sure you want to delete this sale?')) return;
+            try {
+                await fetch(`${API_BASE}/api/sales/${id}`, { method: 'DELETE' });
+                showNotification('Sale deleted', 'success');
+                loadSalesData();
+            } catch (error) {
+                showNotification('Delete failed', 'error');
+            }
+        }
+
+        function editExpense(id) {
+            showNotification(`Edit expense ${id}`, 'info');
+        }
+
+        async function deleteExpense(id) {
+            if (!confirm('Are you sure you want to delete this expense?')) return;
+            try {
+                await fetch(`${API_BASE}/api/expenses/${id}`, { method: 'DELETE' });
+                showNotification('Expense deleted', 'success');
+                loadExpensesData();
+            } catch (error) {
+                showNotification('Delete failed', 'error');
+            }
+        }
+
+        function viewInvoice(id) {
+            showNotification(`View invoice ${id}`, 'info');
+        }
+
+        function editInvoice(id) {
+            showNotification(`Edit invoice ${id}`, 'info');
+        }
+
+        function addInvoicePayment(id) {
+            showNotification(`Add payment to invoice ${id}`, 'info');
+        }
+
+        function viewDebt(id) {
+            showNotification(`View debt ${id}`, 'info');
+        }
+
+        function editDebt(id) {
+            showNotification(`Edit debt ${id}`, 'info');
+        }
+
+        function addDebtPayment(id) {
+            showNotification(`Add payment to debt ${id}`, 'info');
+        }
+
+        // ============================================
+        // LOGIN FORM
+        // ============================================
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const success = await login(username, password);
+            if (success) {
+                document.getElementById('login-form').reset();
+                document.getElementById('login-error').style.display = 'none';
+            }
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            setInterval(loadWeather, 30 * 60 * 1000);
+        });
+    </script>
+</body>
+</html>

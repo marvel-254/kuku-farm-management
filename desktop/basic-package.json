@@ -1,0 +1,12 @@
+{
+  "name": "kuku-farm-manager-demo",
+  "version": "1.0.0",
+  "description": "KUKU Farm Manager Demo",
+  "main": "basic-main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}
