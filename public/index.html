@@ -246,7 +246,7 @@
 
             <nav class="sidebar-nav">
                 <div class="sidebar-link active" data-page="dashboard">
-                    <div class="sidebar-icon">🏠</div>
+                    <div class="sidebar-icon">D</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Dashboard</span>
                         <span class="sidebar-subtitle">Overview</span>
@@ -254,7 +254,7 @@
                 </div>
 
                 <div class="sidebar-link" data-page="chickens">
-                    <div class="sidebar-icon">🐔</div>
+                    <div class="sidebar-icon">C</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Chickens</span>
                         <span class="sidebar-subtitle" id="chicken-count">Loading...</span>
@@ -262,7 +262,7 @@
                 </div>
 
                 <div class="sidebar-link" data-page="inventory">
-                    <div class="sidebar-icon">📦</div>
+                    <div class="sidebar-icon">I</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Inventory</span>
                         <span class="sidebar-subtitle" id="inventory-count">Loading...</span>
@@ -278,7 +278,7 @@
                 </div>
 
                 <div class="sidebar-link" data-page="expenses">
-                    <div class="sidebar-icon">💸</div>
+                    <div class="sidebar-icon">E</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Expenses</span>
                         <span class="sidebar-subtitle" id="expenses-count">Loading...</span>
@@ -286,7 +286,7 @@
                 </div>
 
                 <div class="sidebar-link" data-page="invoices">
-                    <div class="sidebar-icon">📄</div>
+                    <div class="sidebar-icon">N</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Invoices</span>
                         <span class="sidebar-subtitle" id="invoices-count">Loading...</span>
@@ -294,7 +294,7 @@
                 </div>
 
                 <div class="sidebar-link" data-page="debts">
-                    <div class="sidebar-icon">💳</div>
+                    <div class="sidebar-icon">D</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Debts</span>
                         <span class="sidebar-subtitle" id="debts-count">Loading...</span>
@@ -302,7 +302,7 @@
                 </div>
 
                 <div class="sidebar-link" data-page="financial">
-                    <div class="sidebar-icon">📊</div>
+                    <div class="sidebar-icon">F</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Financial</span>
                         <span class="sidebar-subtitle">Reports</span>
@@ -310,10 +310,18 @@
                 </div>
 
                 <div class="sidebar-link" data-page="reports">
-                    <div class="sidebar-icon">📈</div>
+                    <div class="sidebar-icon">R</div>
                     <div class="sidebar-content">
                         <span class="sidebar-title">Reports</span>
                         <span class="sidebar-subtitle">Analytics</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-link" id="logout-btn" onclick="logout()" style="border-top:1px solid rgba(255,255,255,0.1);margin-top:auto;cursor:pointer;">
+                    <div class="sidebar-icon">Q</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Logout</span>
+                        <span class="sidebar-subtitle">Sign out</span>
                     </div>
                 </div>
             </nav>
@@ -383,7 +391,7 @@
             }
         }
 
-        function logout() {
+        async function logout() {
             await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
             currentUser = null;
             document.getElementById('app-container').classList.add('hidden');
@@ -490,6 +498,9 @@
                     case 'financial':
                         await loadFinancialData();
                         break;
+                    case 'reports':
+                        await loadReportsData();
+                        break;
                 }
             } catch (error) {
                 console.error('Error loading page data:', error);
@@ -546,6 +557,12 @@
                 document.getElementById('expenses-count').textContent = `${(expenses.total_expenses || 0)}`;
                 document.getElementById('invoices-count').textContent = `${(invoices.total_outstanding || 0).toFixed(2)} Outstanding`;
                 document.getElementById('debts-count').textContent = `${(debts.total_outstanding || 0).toFixed(2)} Outstanding`;
+
+                // Receivables / Payables cards (BUG-003 fix)
+                const receivablesEl = document.getElementById('receivables');
+                const payablesEl = document.getElementById('payables');
+                if (receivablesEl) receivablesEl.textContent = `$${(invoices.total_outstanding || 0).toFixed(2)}`;
+                if (payablesEl) payablesEl.textContent = `$${(debts.total_outstanding || 0).toFixed(2)}`;
 
                 // Recent batches
                 updateRecentBatches(batchesRes.data || []);
@@ -670,6 +687,34 @@
                 updateFinancialOverview(salesRes.data, expensesRes.data, invoicesRes.data, debtsRes.data);
             } catch (error) {
                 console.error('Error loading financial data:', error);
+            }
+        }
+
+        async function loadReportsData() {
+            try {
+                const [salesRes, expensesRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/sales/stats`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/expenses/stats`).then(r => r.json())
+                ]);
+
+                const sales = salesRes.data || {};
+                const expenses = expensesRes.data || {};
+
+                const set = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val;
+                };
+
+                set('report-sales-revenue', `$${(parseFloat(sales.total_revenue) || 0).toFixed(2)}`);
+                set('report-sales-count', sales.total_sales || 0);
+                set('report-sales-chickens', sales.total_chickens_sold || 0);
+                set('report-sales-avg', `$${(parseFloat(sales.average_sale) || 0).toFixed(2)}`);
+                set('report-expenses-total', `$${(parseFloat(expenses.total_amount) || 0).toFixed(2)}`);
+                set('report-expenses-count', expenses.total_expenses || 0);
+                set('report-expenses-feed', `$${(parseFloat(expenses.feed_total) || 0).toFixed(2)}`);
+                set('report-expenses-medicine', `$${(parseFloat(expenses.medicine_total) || 0).toFixed(2)}`);
+            } catch (error) {
+                console.error('Error loading reports data:', error);
             }
         }
 
@@ -945,13 +990,16 @@
 
             updateEl('total-revenue', sales?.total_revenue || 0);
             updateEl('total-expenses', expenses?.total_amount || 0);
-            updateEl('total-invoices', invoices?.total_amount || 0);
-            updateEl('outstanding-invoices', invoices?.total_outstanding || 0);
-            updateEl('total-debts', debts?.total_amount || 0);
-            updateEl('outstanding-debts', debts?.total_outstanding || 0);
+            updateEl('net-profit', (sales?.total_revenue || 0) - (expenses?.total_amount || 0));
+            updateEl('cash-flow', (sales?.total_revenue || 0) - (expenses?.total_amount || 0) - (debts?.total_outstanding || 0) + (invoices?.total_outstanding || 0));
 
-            const netProfit = (sales?.total_revenue || 0) - (expenses?.total_amount || 0);
-            updateEl('net-profit', netProfit);
+            // financial.html ids
+            updateEl('invoice-count', invoices?.total_invoices || 0, '', '');
+            updateEl('invoice-value', invoices?.total_amount || 0);
+            updateEl('debt-count', debts?.total_debts || 0, '', '');
+            updateEl('debt-value', debts?.total_amount || 0);
+            updateEl('outstanding-invoices', invoices?.total_outstanding || 0);
+            updateEl('outstanding-debts', debts?.total_outstanding || 0);
         }
 
         // ============================================
