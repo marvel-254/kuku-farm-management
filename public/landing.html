@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUKU Farm Management System</title>
+    <link rel="stylesheet" href="assets/css/newsprint.css">
+</head>
+<body>
+<div class="newsprint-grid masthead-grid">
+    <div class="masthead">
+        <div class="label">KUKU Farm Management System</div>
+        <h1 class="masthead-title">KUKU</h1>
+        <p class="masthead-sub">A farm records system for chicken batches, feed, sales, and finance — built for farmers who run the daily numbers.</p>
+        <div class="masthead-actions">
+            <a href="index.html" class="action action-primary">Sign in</a>
+            <a href="#section-system" class="action">Open the app</a>
+        </div>
+    </div>
+    <div class="lead">
+        <div class="label">Farm management console</div>
+        <h2>Raise chickens with numbers you can trust</h2>
+        <p class="lead-deck">Track chicken batches, inventory, sales, expenses, invoices, and debts from one place. KUKU keeps your farm records in order so the paperwork never eats the profit.</p>
+    </div>
+</div>
+
+<div class="section-rule"></div>
+
+<div class="newsprint-grid split-lead" id="section-system">
+    <div class="lead-story">
+        <div class="label">The system</div>
+        <h2>One ledger for the whole flock</h2>
+        <p>KUKU covers the daily work of a poultry operation: batch counts and health, feed and medicine stock, sales and expenses, invoices and debts. Open it on the desktop or in a browser — same records, same book.</p>
+    </div>
+    <div class="summary-column">
+        <div class="label">What it tracks</div>
+        <ul>
+            <li>Chicken batches and health</li>
+            <li>Feed formulation and inventory</li>
+            <li>Sales and expenses</li>
+            <li>Invoices and debts</li>
+            <li>Financial summaries</li>
+        </ul>
+    </div>
+</div>
+
+<div class="section-rule"></div>
+
+<div class="comparison">
+    <div class="compare-row">
+        <div class="compare-id">01</div>
+        <div class="compare-terms">Chickens</div>
+        <div class="compare-detail">Batch counts, healthy vs. sick, batch history</div>
+    </div>
+    <div class="compare-row">
+        <div class="compare-id">02</div>
+        <div class="compare-terms">Feed</div>
+        <div class="compare-detail">Recipe builder with nutrition targets, live cost per kg</div>
+    </div>
+    <div class="compare-row">
+        <div class="compare-id">03</div>
+        <div class="compare-terms">Sales &amp; expenses</div>
+        <div class="compare-detail">Revenue, costs, net position, cash flow</div>
+    </div>
+    <div class="compare-row">
+        <div class="compare-id">04</div>
+        <div class="compare-terms">Invoices &amp; debts</div>
+        <div class="compare-detail">Outstanding payments, who owes what</div>
+    </div>
+    <div class="compare-row">
+        <div class="compare-id">05</div>
+        <div class="compare-terms">Reports</div>
+        <div class="compare-detail">Sales and expense analytics, category breakdowns</div>
+    </div>
+</div>
+
+<div class="section-rule"></div>
+
+<div class="newsprint-grid closing">
+    <div class="closing-question">
+        <div class="label">Ready to begin</div>
+        <h2>Start keeping your farm records in order</h2>
+    </div>
+    <div class="closing-invite">
+        <p>Sign in with your farm account to open the management console. If you are the owner, your default login is admin.</p>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="footer-col">
+        <div class="label">KUKU Farm</div>
+        <p>Management System</p>
+    </div>
+    <div class="footer-col">
+        <div class="label">Sign in</div>
+        <p><a href="index.html">Open the app</a></p>
+    </div>
+    <div class="footer-col">
+        <div class="label">Resources</div>
+        <p>Docs · Feed formulation · Roadmap</p>
+    </div>
+</footer>
+
+<style>
+    .masthead-grid { grid-template-columns: 1fr 1fr; align-items: start; padding-top: 2.4rem; gap: 0; }
+    .masthead-grid > * + * { border-left: 1px solid var(--dp-color-rule); padding-left: var(--dp-spacing-column); }
+
+    .masthead-title { font-size: clamp(3rem, 9vw, 6rem); line-height: 0.95; letter-spacing: -0.02em; margin: 0.5rem 0 0; font-weight: var(--dp-typography-display-weight); }
+
+    .masthead-sub { color: var(--dp-color-secondary); font-size: 1.3rem; max-width: 34rem; margin: 1.5rem 0 0; }
+
+    .masthead-actions { margin-top: 2.2rem; }
+
+    .action { display: inline-block; border: 1px solid var(--dp-color-ink); border-radius: var(--dp-radius-control); padding: 0.6rem 1.4rem; font-size: var(--dp-typography-control); font-weight: var(--dp-typography-label-weight); text-decoration: none; color: var(--dp-color-ink); transition: var(--dp-motion-transition); }
+    .action-primary { background: var(--dp-color-ink); color: var(--dp-color-ground); }
+    .action:hover, .action:focus-visible { background: var(--dp-color-ink); color: var(--dp-color-ground); outline: var(--dp-border-focus) solid var(--dp-color-accent); outline-offset: 2px; }
+
+    .lead { align-self: end; padding-bottom: 0.4rem; }
+    .lead h2 { margin: 0.6rem 0 0; font-size: clamp(1.6rem, 3.4vw, 2.4rem); line-height: 1.1; letter-spacing: -0.01em; }
+    .lead-deck { font-size: var(--dp-typography-reading-compact); color: var(--dp-color-secondary); margin-top: 1rem; }
+
+    .split-lead { grid-template-columns: 3fr 1fr; padding-top: 0; }
+    .lead-story h2 { margin: 0 0 0.8rem; font-size: clamp(1.8rem, 3.6vw, 2.6rem); line-height: 1.05; }
+    .lead-story p { color: var(--dp-color-secondary); font-size: 1.15rem; max-width: 46rem; }
+
+    .summary-column ul { margin: 0 0 0; padding-left: 1.2rem; }
+    .summary-column .label + ul { margin-top: 1rem; }
+    .summary-column li { margin-bottom: 0.6rem; color: var(--dp-color-secondary); }
+
+    .comparison { padding: var(--dp-spacing-column); padding-top: 0; }
+    .compare-row { display: grid; grid-template-columns: 3rem 10rem 1fr; gap: var(--dp-spacing-column); align-items: baseline; padding: 1rem 0; border-top: 1px solid var(--dp-color-rule); }
+    .compare-row:last-child { border-bottom: 1px solid var(--dp-color-rule); }
+    .compare-id { font-size: var(--dp-typography-label); color: var(--dp-color-accent); font-weight: var(--dp-typography-label-weight); letter-spacing: var(--dp-typography-label-tracking); }
+    .compare-terms { font-family: var(--dp-typography-display); font-weight: var(--dp-typography-display-weight); font-size: 1.1rem; }
+    .compare-detail { color: var(--dp-color-secondary); font-size: var(--dp-typography-reading-compact); }
+    .comparison .compare-row:first-child { border-top: var(--dp-border-section) solid var(--dp-color-ink); }
+
+    .closing { grid-template-columns: 3fr 1fr; padding-top: 0; }
+    .closing-question h2 { margin: 0.6rem 0 0; font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+    .closing-invite p { color: var(--dp-color-secondary); }
+
+    .footer { border-top: var(--dp-border-section) solid var(--dp-color-ink); margin-top: var(--dp-spacing-story); padding: var(--dp-spacing-column); display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--dp-spacing-column); }
+    .footer .label { margin-bottom: 0.5rem; }
+    .footer p { margin: 0; color: var(--dp-color-secondary); font-size: var(--dp-typography-control); }
+    .footer a { color: var(--dp-color-ink); }
+
+    @media (max-width: 700px) {
+        .masthead-grid, .split-lead, .closing { grid-template-columns: 1fr; }
+        .masthead-grid > * + * { border-left: 0; padding-left: 0; }
+        .masthead-actions { margin-top: 1.4rem; }
+        .compare-row { grid-template-columns: 3rem 1fr; }
+        .compare-detail { grid-column: 2; }
+        .footer { grid-template-columns: 1fr 1fr; }
+        .summary-column { border-top: 1px solid var(--dp-color-rule); padding-top: var(--dp-spacing-column); }
+    }
+</style>
+</body>
+</html>

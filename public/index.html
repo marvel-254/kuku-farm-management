@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KUKU Farm Management System</title>
     <link rel="stylesheet" href="assets/css/professional.css">
+    <link rel="stylesheet" href="assets/css/newsprint-ui.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .app-container {
@@ -317,6 +318,14 @@
                     </div>
                 </div>
 
+                <div class="sidebar-link" data-page="feed">
+                    <div class="sidebar-icon">X</div>
+                    <div class="sidebar-content">
+                        <span class="sidebar-title">Feed Formulation</span>
+                        <span class="sidebar-subtitle">Nutrition Calculator</span>
+                    </div>
+                </div>
+
                 <div class="sidebar-link" id="logout-btn" onclick="logout()" style="border-top:1px solid rgba(255,255,255,0.1);margin-top:auto;cursor:pointer;">
                     <div class="sidebar-icon">Q</div>
                     <div class="sidebar-content">
@@ -428,6 +437,13 @@
             currentPage = page;
 
             const container = document.getElementById('page-container');
+            const mainContent = document.querySelector('.main-content');
+
+            // Apply Newsprint design system to all pages EXCEPT the dashboard
+            if (mainContent) {
+                mainContent.classList.toggle('newsprint-ui', page !== 'dashboard');
+            }
+
             container.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
@@ -500,6 +516,9 @@
                         break;
                     case 'reports':
                         await loadReportsData();
+                        break;
+                    case 'feed':
+                        await loadFeedFormulationData();
                         break;
                 }
             } catch (error) {
@@ -715,6 +734,182 @@
                 set('report-expenses-medicine', `$${(parseFloat(expenses.medicine_total) || 0).toFixed(2)}`);
             } catch (error) {
                 console.error('Error loading reports data:', error);
+            }
+        }
+
+        // ============================================
+        // FEED FORMULATION / NUTRITION CALCULATOR
+        // ============================================
+
+        let feedIngredients = [];
+        let feedRecipes = [];
+        let editingFeedRecipeId = null;
+
+        async function loadFeedFormulationData() {
+            try {
+                const [ingRes, recipeRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/ingredients`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/feed-recipes`).then(r => r.json())
+                ]);
+                feedIngredients = ingRes.data || [];
+                feedRecipes = recipeRes.data || [];
+                renderFeedIngredientRows();
+                renderFeedRecipes();
+                loadFeedRecipeIntoBuilder(feedRecipes.find(r => r.is_default));
+            } catch (error) {
+                console.error('Error loading feed data:', error);
+                const body = document.getElementById('feed-ingredient-body');
+                if (body) body.innerHTML = '<tr><td colspan="6" class="text-danger">Error loading ingredients.</td></tr>';
+            }
+        }
+
+        function renderFeedIngredientRows() {
+            const body = document.getElementById('feed-ingredient-body');
+            if (!body) return;
+
+            if (!feedIngredients.length) {
+                body.innerHTML = '<tr><td colspan="6" class="text-muted">No ingredients found.</td></tr>';
+                return;
+            }
+
+            const catLabels = { energy: 'Energy', protein: 'Protein', mineral: 'Mineral', vitamin: 'Vitamin' };
+            body.innerHTML = feedIngredients.map(ing =>
+                '<tr>' +
+                '<td>' + ing.name + '</td>' +
+                '<td>' + (catLabels[ing.category] || ing.category) + '</td>' +
+                '<td>' + (ing.crude_protein_pct || 0) + '%</td>' +
+                '<td>' + (ing.energy_mcal || 0) + ' Mcal</td>' +
+                '<td>$' + (ing.unit_price || 0).toFixed(2) + '</td>' +
+                '<td style="width:110px"><input type="number" class="form-control feed-pct" data-ingredient-id="' + ing.id + '" min="0" max="100" step="0.1" value="0" oninput="recalcFeedNutrition()"></td>' +
+                '</tr>'
+            ).join('');
+        }
+
+        function recalcFeedNutrition() {
+            const totals = { protein: 0, energy: 0, calcium: 0, phosphorus: 0, cost: 0 };
+            let pctSum = 0;
+            document.querySelectorAll('.feed-pct').forEach(input => {
+                const val = parseFloat(input.value) || 0;
+                pctSum += val;
+                const ing = feedIngredients.find(i => i.id === parseInt(input.dataset.ingredientId));
+                if (ing) {
+                    const w = val / 100;
+                    totals.protein += (ing.crude_protein_pct || 0) * w;
+                    totals.energy += (ing.energy_mcal || 0) * w;
+                    totals.calcium += (ing.calcium_pct || 0) * w;
+                    totals.phosphorus += (ing.phosphorus_pct || 0) * w;
+                    totals.cost += (ing.unit_price || 0) * w;
+                }
+            });
+
+            const fmt = (id, val, suffix) => {
+                suffix = suffix || '';
+                const el = document.getElementById(id);
+                if (el) el.textContent = val + suffix;
+            };
+            fmt('feed-calc-protein', totals.protein.toFixed(2), '%');
+            fmt('feed-calc-energy', totals.energy.toFixed(2), ' Mcal');
+            fmt('feed-calc-calcium', totals.calcium.toFixed(2), '%');
+            fmt('feed-calc-phosphorus', totals.phosphorus.toFixed(2), '%');
+            fmt('feed-calc-cost', '$' + totals.cost.toFixed(2));
+            fmt('feed-calc-total', pctSum.toFixed(2), '%');
+
+            const statusEl = document.getElementById('feed-summary-status');
+            if (statusEl) {
+                if (pctSum === 0) statusEl.innerHTML = '';
+                else if (Math.abs(pctSum - 100) < 0.01) statusEl.innerHTML = '<div class="alert alert-success mt-3">Recipe sums to 100%. Ready to save.</div>';
+                else statusEl.innerHTML = '<div class="alert alert-warning mt-3">Mix is <strong>' + pctSum.toFixed(1) + '%</strong>. Adjust to exactly 100%.</div>';
+            }
+        }
+
+        function loadFeedRecipeIntoBuilder(recipe) {
+            if (!recipe) return;
+            const nameEl = document.getElementById('feed-recipe-name');
+            if (nameEl) nameEl.value = recipe.name || '';
+
+            const proteinEl = document.getElementById('feed-target-protein');
+            const energyEl = document.getElementById('feed-target-energy');
+            if (proteinEl) proteinEl.value = recipe.target_protein || '';
+            if (energyEl) energyEl.value = recipe.target_energy || '';
+
+            document.querySelectorAll('.feed-pct').forEach(input => {
+                const ri = (recipe.ingredients || []).find(ing => ing.ingredient_id === parseInt(input.dataset.ingredientId));
+                input.value = ri ? ri.percentage : 0;
+            });
+            recalcFeedNutrition();
+        }
+
+        async function saveFeedRecipe() {
+            const name = document.getElementById('feed-recipe-name').value.trim();
+            const target_protein = parseFloat(document.getElementById('feed-target-protein').value) || 0;
+            const target_energy = parseFloat(document.getElementById('feed-target-energy').value) || 0;
+
+            const ingredients = [];
+            document.querySelectorAll('.feed-pct').forEach(input => {
+                const pct = parseFloat(input.value) || 0;
+                if (pct > 0) ingredients.push({ ingredient_id: parseInt(input.dataset.ingredientId), percentage: pct });
+            });
+
+            const totalPct = ingredients.reduce((s, i) => s + i.percentage, 0);
+            if (Math.abs(totalPct - 100) > 0.01) {
+                alert('Mix must sum to 100%. Currently ' + totalPct.toFixed(1) + '%.');
+                return;
+            }
+            if (!name) { alert('Recipe name required'); return; }
+            if (ingredients.length === 0) { alert('Add at least one ingredient'); return; }
+
+            try {
+                const url = editingFeedRecipeId ? API_BASE + '/api/feed-recipes/' + editingFeedRecipeId : API_BASE + '/api/feed-recipes';
+                const method = editingFeedRecipeId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, target_protein: target_protein, target_energy: target_energy, ingredients: ingredients })
+                });
+                if (res.ok) {
+                    showNotification('Recipe saved!', 'success');
+                    editingFeedRecipeId = null;
+                    const recipesRes = await fetch(API_BASE + '/api/feed-recipes').then(r => r.json());
+                    feedRecipes = recipesRes.data || [];
+                    renderFeedRecipes();
+                }
+            } catch (err) {
+                showNotification('Save failed: ' + err.message, 'error');
+            }
+        }
+
+        function renderFeedRecipes() {
+            const container = document.getElementById('feed-recipes-content');
+            if (!container) return;
+
+            if (!feedRecipes.length) {
+                container.innerHTML = '<p class="text-muted">No saved recipes.</p>';
+                return;
+            }
+
+            container.innerHTML = feedRecipes.map(r =>
+                '<div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">' +
+                '<div><strong>' + r.name + '</strong>' + (r.is_default ? ' <span class="badge badge-primary">Default</span>' : '') +
+                '<div class="text-muted small">Protein ' + (r.target_protein || 0) + '%  Energy ' + (r.target_energy || 0) + ' kcal</div></div>' +
+                '<div><button class="btn btn-sm btn-outline-primary" onclick="loadFeedRecipeIntoBuilder(findRecipe(' + r.id + '))">Load</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteFeedRecipe(' + r.id + ')">Delete</button></div></div>'
+            ).join('');
+        }
+
+        function findRecipe(id) {
+            return feedRecipes.find(r => r.id === id);
+        }
+
+        async function deleteFeedRecipe(id) {
+            if (!confirm('Delete this recipe?')) return;
+            try {
+                await fetch(API_BASE + '/api/feed-recipes/' + id, { method: 'DELETE' });
+                showNotification('Recipe deleted', 'success');
+                const recipesRes = await fetch(API_BASE + '/api/feed-recipes').then(r => r.json());
+                feedRecipes = recipesRes.data || [];
+                renderFeedRecipes();
+            } catch (err) {
+                showNotification('Delete failed: ' + err.message, 'error');
             }
         }
 

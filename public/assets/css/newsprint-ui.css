@@ -1,0 +1,445 @@
+/* Newsprint UI Override — applies Newsprint design system to all non-dashboard pages */
+
+/* ===== TOKENS (from Newsprint spec) ===== */
+:root {
+  --dp-color-ground: #f3efe5;
+  --dp-color-ink: #191916;
+  --dp-color-secondary: #494843;
+  --dp-color-rule: #9b978e;
+  --dp-color-accent: #a3231d;
+
+  --dp-typography-display: "Newsprint Display", Georgia, serif;
+  --dp-typography-reading: "Newsprint Reading", Georgia, serif;
+  --dp-typography-body: 20px;
+  --dp-typography-reading-compact: 19px;
+  --dp-typography-label: 12px;
+  --dp-typography-control: 15px;
+
+  --dp-typography-label-weight: 650;
+  --dp-typography-display-weight: 900;
+  --dp-typography-body-leading: 1.3;
+  --dp-typography-control-leading: 1.2;
+  --dp-typography-label-tracking: 0.09em;
+
+  --dp-spacing-column: 24px;
+  --dp-spacing-story: 22px;
+
+  --dp-radius-control: 0;
+  --dp-border-hairline: 1px;
+  --dp-border-section: 4px;
+  --dp-border-focus: 2px;
+
+  --dp-motion-transition: none;
+}
+
+/* ===== BASE ===== */
+.newsprint-ui {
+  background-color: var(--dp-color-ground);
+  color: var(--dp-color-ink);
+  font-family: var(--dp-typography-reading);
+  font-size: var(--dp-typography-body);
+  line-height: var(--dp-typography-body-leading);
+}
+
+/* Content area override (beats the inline .main-content background) */
+.main-content.newsprint-ui {
+  background-color: var(--dp-color-ground);
+}
+
+.newsprint-ui h1, .newsprint-ui h2, .newsprint-ui h3,
+.newsprint-ui h4, .newsprint-ui h5, .newsprint-ui h6 {
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  color: var(--dp-color-ink);
+}
+
+.newsprint-ui .label {
+  font-family: var(--dp-typography-reading);
+  font-size: var(--dp-typography-label);
+  font-weight: var(--dp-typography-label-weight);
+  letter-spacing: var(--dp-typography-label-tracking);
+  text-transform: uppercase;
+  color: var(--dp-color-secondary);
+}
+
+/* ===== COLUMN GRID & DIVIDERS ===== */
+.newsprint-ui .newsprint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--dp-spacing-column);
+  padding: var(--dp-spacing-column);
+}
+
+.newsprint-ui .newsprint-grid > * + * {
+  border-left: var(--dp-border-hairline) solid var(--dp-color-rule);
+  padding-left: var(--dp-spacing-column);
+}
+
+/* Section rules */
+.newsprint-ui hr, .newsprint-ui .section-rule {
+  border: 0;
+  border-top: var(--dp-border-section) solid var(--dp-color-ink);
+  margin: var(--dp-spacing-story) 0;
+}
+
+/* ===== COMPONENT OVERRIDES ===== */
+
+/* Cards → flat ruled sections */
+.newsprint-ui .card {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  margin-bottom: var(--dp-spacing-story);
+  padding: 0;
+}
+
+.newsprint-ui .card-header {
+  background: transparent;
+  border-bottom: var(--dp-border-section) solid var(--dp-color-ink);
+  padding: var(--dp-spacing-story) 0 0 0;
+  margin-bottom: var(--dp-spacing-column);
+}
+
+.newsprint-ui .card-header h3 {
+  color: var(--dp-color-ink);
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  font-size: 1.5rem;
+}
+
+.newsprint-ui .card-body {
+  padding: 0;
+}
+
+/* Stats grid → ruled columns */
+.newsprint-ui .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--dp-spacing-column);
+  margin-bottom: var(--dp-spacing-story);
+}
+
+.newsprint-ui .stats-grid > * + * {
+  border-left: var(--dp-border-hairline) solid var(--dp-color-rule);
+  padding-left: var(--dp-spacing-column);
+}
+
+.newsprint-ui .stat-card {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  display: block;
+  text-align: left;
+}
+
+.newsprint-ui .stat-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.newsprint-ui .stat-icon {
+  background: transparent;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  font-size: 2rem;
+  color: var(--dp-color-ink);
+}
+
+.newsprint-ui .stat-content h3 {
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  font-size: 2.5rem;
+  color: var(--dp-color-ink);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.newsprint-ui .stat-content p {
+  color: var(--dp-color-secondary);
+  font-family: var(--dp-typography-reading);
+}
+
+.newsprint-ui .stat-content small {
+  color: var(--dp-color-secondary);
+  font-size: var(--dp-typography-label);
+}
+
+/* Tables → ruled tables */
+.newsprint-ui .table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--dp-typography-reading);
+  font-size: var(--dp-typography-reading-compact);
+}
+
+.newsprint-ui .table th,
+.newsprint-ui .table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: var(--dp-border-hairline) solid var(--dp-color-rule);
+}
+
+.newsprint-ui .table th {
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  color: var(--dp-color-ink);
+  background: transparent;
+  text-transform: uppercase;
+  font-size: var(--dp-typography-label);
+  letter-spacing: var(--dp-typography-label-tracking);
+}
+
+.newsprint-ui .table tbody tr:hover {
+  background-color: transparent;
+  transform: none;
+}
+
+.newsprint-ui .table-responsive {
+  overflow-x: auto;
+}
+
+/* Buttons → square, thin border, invert on hover */
+.newsprint-ui .btn {
+  background: transparent;
+  color: var(--dp-color-ink);
+  border: var(--dp-border-hairline) solid var(--dp-color-ink);
+  border-radius: var(--dp-radius-control);
+  padding: 8px 16px;
+  font-size: var(--dp-typography-control);
+  font-family: var(--dp-typography-reading);
+  font-weight: 500;
+  line-height: var(--dp-typography-control-leading);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--dp-motion-transition);
+}
+
+.newsprint-ui .btn:hover {
+  background: var(--dp-color-ink);
+  color: var(--dp-color-ground);
+  transform: none;
+  box-shadow: none;
+}
+
+.newsprint-ui .btn:focus {
+  outline: var(--dp-border-focus) solid var(--dp-color-accent);
+  outline-offset: 2px;
+}
+
+.newsprint-ui .btn-primary {
+  background: var(--dp-color-accent);
+  border-color: var(--dp-color-accent);
+  color: var(--dp-color-ground);
+}
+
+.newsprint-ui .btn-primary:hover {
+  background: var(--dp-color-ink);
+  border-color: var(--dp-color-ink);
+}
+
+.newsprint-ui .btn-secondary {
+  background: transparent;
+  border-color: var(--dp-color-ink);
+  color: var(--dp-color-ink);
+}
+
+.newsprint-ui .btn-sm {
+  padding: 6px 12px;
+  font-size: var(--dp-typography-label);
+}
+
+.newsprint-ui .btn-lg {
+  padding: 12px 24px;
+  font-size: var(--dp-typography-body);
+}
+
+/* Forms → square inputs, thin border */
+.newsprint-ui .form-group {
+  margin-bottom: var(--dp-spacing-column);
+}
+
+.newsprint-ui .form-label {
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  font-size: var(--dp-typography-label);
+  letter-spacing: var(--dp-typography-label-tracking);
+  text-transform: uppercase;
+  color: var(--dp-color-secondary);
+  margin-bottom: 6px;
+}
+
+.newsprint-ui .form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: var(--dp-border-hairline) solid var(--dp-color-rule);
+  border-radius: var(--dp-radius-control);
+  font-size: var(--dp-typography-control);
+  font-family: var(--dp-typography-reading);
+  line-height: var(--dp-typography-control-leading);
+  background: var(--dp-color-ground);
+  color: var(--dp-color-ink);
+  transition: var(--dp-motion-transition);
+}
+
+.newsprint-ui .form-control:focus {
+  outline: var(--dp-border-focus) solid var(--dp-color-accent);
+  outline-offset: 2px;
+  border-color: var(--dp-color-accent);
+  box-shadow: none;
+}
+
+/* Badges → small uppercase labels */
+.newsprint-ui .badge {
+  background: transparent;
+  color: var(--dp-color-secondary);
+  border: var(--dp-border-hairline) solid var(--dp-color-rule);
+  border-radius: var(--dp-radius-control);
+  padding: 2px 8px;
+  font-size: var(--dp-typography-label);
+  font-family: var(--dp-typography-reading);
+  font-weight: var(--dp-typography-label-weight);
+  letter-spacing: var(--dp-typography-label-tracking);
+  text-transform: uppercase;
+}
+
+.newsprint-ui .badge-success {
+  border-color: var(--dp-color-accent);
+  color: var(--dp-color-accent);
+}
+
+.newsprint-ui .badge-warning {
+  border-color: var(--dp-color-accent);
+  color: var(--dp-color-accent);
+}
+
+.newsprint-ui .badge-danger {
+  border-color: var(--dp-color-accent);
+  color: var(--dp-color-accent);
+}
+
+/* Alerts → flat ruled blocks */
+.newsprint-ui .alert {
+  background: transparent;
+  border: var(--dp-border-hairline) solid var(--dp-color-rule);
+  border-radius: var(--dp-radius-control);
+  padding: var(--dp-spacing-column);
+  margin-bottom: var(--dp-spacing-story);
+}
+
+.newsprint-ui .alert-danger {
+  border-color: var(--dp-color-accent);
+  border-left: var(--dp-border-section) solid var(--dp-color-accent);
+}
+
+.newsprint-ui .alert-success {
+  border-color: #27ae60;
+  border-left: var(--dp-border-section) solid #27ae60;
+}
+
+/* Modal → flat with ruled top */
+.newsprint-ui .modal-content {
+  background: var(--dp-color-ground);
+  border-radius: var(--dp-radius-control);
+  box-shadow: none;
+  border: var(--dp-border-hairline) solid var(--dp-color-rule);
+  border-top: var(--dp-border-section) solid var(--dp-color-ink);
+}
+
+.newsprint-ui .modal-header {
+  border-bottom: var(--dp-border-hairline) solid var(--dp-color-rule);
+  padding: var(--dp-spacing-column);
+}
+
+.newsprint-ui .modal-body {
+  padding: var(--dp-spacing-column);
+}
+
+.newsprint-ui .modal-footer {
+  border-top: var(--dp-border-hairline) solid var(--dp-color-rule);
+  padding: var(--dp-spacing-column);
+}
+
+/* Page navigation → ruled bar */
+.newsprint-ui .page-navigation {
+  border-bottom: var(--dp-border-section) solid var(--dp-color-ink);
+  padding: var(--dp-spacing-story) 0;
+  margin-bottom: var(--dp-spacing-story);
+}
+
+.newsprint-ui .page-header h1 {
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  color: var(--dp-color-ink);
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.newsprint-ui .page-header p {
+  color: var(--dp-color-secondary);
+  font-family: var(--dp-typography-reading);
+}
+
+/* Stat-large */
+.newsprint-ui .stat-large {
+  font-family: var(--dp-typography-display);
+  font-weight: var(--dp-typography-display-weight);
+  font-size: 3rem;
+  color: var(--dp-color-ink);
+  line-height: 1;
+  margin: var(--dp-spacing-story) 0;
+}
+
+/* Remove all animations on Newsprint pages */
+.newsprint-ui *,
+.newsprint-ui *::before,
+.newsprint-ui *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .newsprint-ui .newsprint-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--dp-spacing-column);
+  }
+  .newsprint-ui .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .newsprint-ui .newsprint-grid > * + * {
+    border-left: none;
+    border-top: var(--dp-border-hairline) solid var(--dp-color-rule);
+    padding-left: 0;
+    padding-top: var(--dp-spacing-column);
+  }
+
+  .newsprint-ui .stats-grid > * + * {
+    border-left: none;
+    border-top: var(--dp-border-hairline) solid var(--dp-color-rule);
+    padding-left: 0;
+    padding-top: var(--dp-spacing-column);
+  }
+
+  .newsprint-ui .newsprint-grid,
+  .newsprint-ui .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reduced motion respected (Newsprint already has --dp-motion-transition: none) */
+@media (prefers-reduced-motion: reduce) {
+  .newsprint-ui *,
+  .newsprint-ui *::before,
+  .newsprint-ui *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
